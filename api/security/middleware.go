@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"fmt"
 	"go-gaurd/database"
 	"log"
@@ -111,16 +112,16 @@ func AuthMiddleware(redisCache *database.RedisCache) fiber.Handler {
 }
 
 // User-specific rate limiting
-func RateLimitPerUser() fiber.Handler {
+func RateLimitPerUser(redisCache *database.RedisCache, max int, expiration time.Duration) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        20,              // 20 requests
-		Expiration: 1 * time.Minute, // per minute
+		Max:        max,        // 20 requests
+		Expiration: expiration, // per minute
 		KeyGenerator: func(c *fiber.Ctx) string {
-			userID := c.Locals("user_id")
+			userID := redisCache.Cache.Get(context.Background(), "userID")
 			if userID == nil {
 				return c.IP()
 			}
-			return "user:" + userID.(string)
+			return "user:" + userID.Val()
 		},
 		LimitReached: func(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
@@ -130,13 +131,22 @@ func RateLimitPerUser() fiber.Handler {
 	})
 }
 
-// Admin-specific rate limiting (stricter)
-func RateLimitAdmin() fiber.Handler {
-	return limiter.New(limiter.Config{
-		Max:        10,
-		Expiration: 1 * time.Minute,
-		KeyGenerator: func(c *fiber.Ctx) string {
-			return "admin:" + c.IP()
-		},
-	})
-}
+// // Admin-specific rate limiting (stricter)
+// func RateLimitAdmin(redisCache *database.RedisCache) fiber.Handler {
+// 	return limiter.New(limiter.Config{
+// 		Max:        20,              // 20 requests
+// 		Expiration: 1 * time.Minute, // per minute
+// 		KeyGenerator: func(c *fiber.Ctx) string {
+// 			userID := redisCache.Cache.Get(context.Background(), "userID")
+// 			if userID == nil {
+// 				return c.IP()
+// 			}
+// 			return "user:" + userID.Val()
+// 		},
+// 		LimitReached: func(c *fiber.Ctx) error {
+// 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+// 				"error": "Rate limit exceeded for this Admin",
+// 			})
+// 		},
+// 	})
+// }

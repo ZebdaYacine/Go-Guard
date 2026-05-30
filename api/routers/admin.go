@@ -1,1 +1,32 @@
 package routers
+
+import (
+	"fmt"
+	"go-gaurd/api/controller/public"
+	"go-gaurd/api/security"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+)
+
+func SetupAdminRouter(app *fiber.App, authController *public.AuthController) {
+
+	admin := app.Group("/api/admin")
+	admin.Use(security.AuthMiddleware(authController.RedisCache))
+	app.Use(security.RateLimitPerUser(authController.RedisCache, 10, 1*time.Minute))
+	admin.Get("/dashboard", func(c *fiber.Ctx) error {
+		fmt.Println("YOU ARE INSIDE DASHBOARD ENDPOINT")
+
+		// Get admin info from context (set by AuthMiddleware)
+		userID := c.Locals("userID")
+		role := c.Locals("role")
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"status":  "ready",
+			"message": "Profile endpoint",
+			"user_id": userID,
+			"role":    role,
+		})
+	})
+
+}
