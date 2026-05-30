@@ -112,6 +112,7 @@ func AuthMiddleware(redisCache *database.RedisCache) fiber.Handler {
 }
 
 // Guest-specific rate limiting
+// TODO CHECK IF IPs ARE IN REDIS
 func RateLimitPerGuest(redisCache *database.RedisCache, max int, expiration time.Duration) fiber.Handler {
 	return limiter.New(limiter.Config{
 		Max:        max,        // 20 requests

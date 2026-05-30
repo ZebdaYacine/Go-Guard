@@ -12,6 +12,8 @@ type Config struct {
 	DBHost               string
 	DBPort               string
 	DBName               string
+	REDIS_HOST           string
+	REDIS_PORT           string
 	ACCESS_TOKEN_SECRET  string
 	REFRESH_TOKEN_SECRET string
 }
@@ -28,6 +30,8 @@ func NewConfig() (*Config, error) {
 		DBHost:               os.Getenv("HOST_DB"),
 		DBPort:               os.Getenv("PORT_DB"),
 		DBName:               os.Getenv("DB_NAME"),
+		REDIS_HOST:           os.Getenv("REDIS_HOST"),
+		REDIS_PORT:           os.Getenv("REDIS_PORT"),
 		ACCESS_TOKEN_SECRET:  os.Getenv("ACCESS_TOKEN_SECRET"),
 		REFRESH_TOKEN_SECRET: os.Getenv("REFRESH_TOKEN_SECRET"),
 	}, nil

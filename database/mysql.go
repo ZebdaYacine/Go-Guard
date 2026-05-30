@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"go-gaurd/core/config"
 	"time"
 
@@ -27,6 +28,8 @@ func NewDatabase(cfg *config.Config) (*Database, error) {
 	if err := db.Ping(); err != nil {
 		return nil, err
 	}
+
+	fmt.Println("Connected to MySQL successfully")
 
 	boil.SetDB(db)
 	return &Database{DB: db}, nil
