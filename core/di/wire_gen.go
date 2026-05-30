@@ -7,6 +7,7 @@
 package di
 
 import (
+	"go-gaurd/api/controller/public"
 	"go-gaurd/core/config"
 	"go-gaurd/database"
 	"go-gaurd/feature/auth/domain"
@@ -15,7 +16,7 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeAuthApplication() (*usecase.AuthUseCase, error) {
+func InitializeAuthApplication() (*public.AuthController, error) {
 	configConfig, err := config.NewConfig()
 	if err != nil {
 		return nil, err
@@ -26,5 +27,6 @@ func InitializeAuthApplication() (*usecase.AuthUseCase, error) {
 	}
 	authRepository := domain.NewAuthRepository(databaseDatabase)
 	authUseCase := usecase.NewAuthUseCase(authRepository)
-	return authUseCase, nil
+	authController := public.NewAuthController(authUseCase)
+	return authController, nil
 }

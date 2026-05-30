@@ -4,6 +4,7 @@
 package di
 
 import (
+	"go-gaurd/api/controller/public"
 	"go-gaurd/core/config"
 	"go-gaurd/database"
 	"go-gaurd/feature/auth/domain"
@@ -12,12 +13,13 @@ import (
 	"github.com/google/wire"
 )
 
-func InitializeAuthApplication() (*usecase.AuthUseCase, error) {
+func InitializeAuthApplication() (*public.AuthController, error) {
 	wire.Build(
 		config.NewConfig,
 		database.NewDatabase,
 		domain.NewAuthRepository,
 		usecase.NewAuthUseCase,
+		public.NewAuthController,
 	)
 	return nil, nil
 }
