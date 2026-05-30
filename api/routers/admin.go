@@ -12,6 +12,7 @@ import (
 func SetupAdminRouter(app *fiber.App, authController *public.AuthController) {
 
 	admin := app.Group("/api/admin")
+	admin.Use(security.DetectClientIP(authController.RedisCache))
 	admin.Use(security.AuthMiddleware(authController.RedisCache))
 	app.Use(security.RateLimitPerUser(authController.RedisCache, 10, 1*time.Minute))
 	admin.Get("/dashboard", func(c *fiber.Ctx) error {

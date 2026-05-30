@@ -12,7 +12,7 @@ import (
 func SetupPrivateRoutes(app *fiber.App, authController *public.AuthController) {
 
 	user := app.Group("/api/user")
-
+	user.Use(security.DetectClientIP(authController.RedisCache))
 	user.Use(security.AuthMiddleware(authController.RedisCache))
 	app.Use(security.RateLimitPerUser(authController.RedisCache, 10, 1*time.Minute))
 	user.Get("/profile", func(c *fiber.Ctx) error {
