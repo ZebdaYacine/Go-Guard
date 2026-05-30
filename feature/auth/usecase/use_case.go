@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"go-gaurd/feature/auth/domain"
 
 	"github.com/go-playground/validator/v10"
@@ -27,20 +26,20 @@ type AuthUseCaseInterface interface {
 }
 
 func (au *AuthUseCase) CreateAccount(ctx context.Context, query Query) Result {
-	err := validate.Struct(query)
-	if err != nil {
-		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			for _, ve := range validationErrors {
-				fmt.Printf("Field: %s, Error: %s, Value: %v\n",
-					ve.Field(), ve.Tag(), ve.Value())
-			}
-		}
-		return Result{
-			User:    User_Entity(query.User),
-			Message: "Invalid Input",
-			Success: false,
-		}
-	}
+	// err := validate.Struct(query)
+	// if err != nil {
+	// 	if validationErrors, ok := err.(validator.ValidationErrors); ok {
+	// 		for _, ve := range validationErrors {
+	// 			fmt.Printf("Field: %s, Error: %s, Value: %v\n",
+	// 				ve.Field(), ve.Tag(), ve.Value())
+	// 		}
+	// 	}
+	// 	return Result{
+	// 		User:    User_Entity(query.User),
+	// 		Message: "Invalid Input",
+	// 		Success: false,
+	// 	}
+	// }
 	result := au.UserRepository.CreateAccount(ctx, domain.Query{User: domain.User_Entity(query.User)})
 	if !result.Success {
 		return Result{

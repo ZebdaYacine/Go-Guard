@@ -1,12 +1,44 @@
 package security
 
 import (
-	"strings"
+	"fmt"
+	"go-gaurd/database"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 )
+
+// Custom logger middleware with more details
+func CustomLogger() fiber.Handler {
+	return logger.New(logger.Config{
+		Format:     "${time} | ${status} | ${latency} | ${method} | ${path} | ${ip} | ${user-agent}\n",
+		TimeFormat: "2006-01-02 15:04:05",
+		TimeZone:   "Local",
+		Output:     log.Writer(), // Write to your log output
+	})
+}
+
+// Route logger middleware to log specific route access
+func RouteLogger(routeName string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		start := time.Now()
+
+		// Log before request
+		log.Printf("[ROUTE] Entering %s - %s %s", routeName, c.Method(), c.Path())
+
+		// Process request
+		err := c.Next()
+
+		// Log after request
+		duration := time.Since(start)
+		log.Printf("[ROUTE] Exiting %s - Status: %d - Duration: %v", routeName, c.Response().StatusCode(), duration)
+
+		return err
+	}
+}
 
 // Security headers middleware
 func SecurityHeaders() fiber.Handler {
@@ -25,34 +57,55 @@ func SecurityHeaders() fiber.Handler {
 }
 
 // Admin authentication middleware
-func AdminAuth() fiber.Handler {
+// AuthMiddleware is a Fiber middleware for JWT authentication
+func AuthMiddleware(redisCache *database.RedisCache) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		auth := c.Get("Authorization")
+		// Get the Authorization header
+		authHeader := c.Get("Authorization")
 
-		if auth == "" {
+		// Extract token
+		token, err := ExtractTokenFromHeader(authHeader)
+		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Authorization header required",
+				"error":   "Unauthorized",
+				"message": "Missing or invalid authorization header",
 			})
 		}
 
-		// Check for Bearer token
-		parts := strings.SplitN(auth, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		// Validate token
+		valid, userID, role, err := ValidateAccessToken(token)
+		if err != nil || !valid {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid authorization format. Use Bearer token",
+				"error":   "Invalid or expired token",
+				"message": err.Error(),
 			})
 		}
 
-		token := parts[1]
-
-		// Validate token (in production, verify JWT)
-		if token != "admin-secret-token" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid token",
-			})
+		// Store user info in Fiber's context locals
+		// TODO USE REDIS SERVER
+		rdb := redisCache.Cache
+		rdb.Set(c.Context(), "userID", userID, 0)
+		rdb.Set(c.Context(), "role", role, 0)
+		// List all keys
+		keys, err := rdb.Keys(c.Context(), "*").Result()
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		c.Locals("admin", true)
+		if len(keys) == 0 {
+			fmt.Println("No keys found in Redis")
+		} else {
+			fmt.Printf("Found %d keys:\n", len(keys))
+			for _, key := range keys {
+				// Get type of each key
+				keyType, _ := rdb.Type(c.Context(), key).Result()
+				fmt.Printf("  - %s (type: %s)\n", key, keyType)
+			}
+		}
+		// c.Locals("userID", userID)
+		// c.Locals("role", role)
+
+		// Continue to next handler
 		return c.Next()
 	}
 }

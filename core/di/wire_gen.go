@@ -27,6 +27,10 @@ func InitializeAuthApplication() (*public.AuthController, error) {
 	}
 	authRepository := domain.NewAuthRepository(databaseDatabase)
 	authUseCase := usecase.NewAuthUseCase(authRepository)
-	authController := public.NewAuthController(authUseCase)
+	redisCache, err := database.NewRedisCache(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	authController := public.NewAuthController(authUseCase, redisCache)
 	return authController, nil
 }

@@ -19,6 +19,7 @@ func InitializeAuthApplication() (*public.AuthController, error) {
 		database.NewDatabase,
 		domain.NewAuthRepository,
 		usecase.NewAuthUseCase,
+		database.NewRedisCache,
 		public.NewAuthController,
 	)
 	return nil, nil
