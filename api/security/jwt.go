@@ -170,9 +170,9 @@ func ValidateAccessToken(tokenString string) (bool, string, string, error) {
 }
 
 // ValidateRefreshToken specifically validates a refresh token
-func ValidateRefreshToken(tokenString string) (bool, string, string, error) {
+func ValidateRefreshToken(tokenString string) (bool, *CustomClaims, error) {
 	if tokenString == "" {
-		return false, "", "", errors.New("token cannot be empty")
+		return false, nil, errors.New("token cannot be empty")
 	}
 
 	claims := &CustomClaims{}
@@ -184,25 +184,25 @@ func ValidateRefreshToken(tokenString string) (bool, string, string, error) {
 	})
 
 	if err != nil {
-		return false, "", "", err
+		return false, nil, err
 	}
 
 	if !token.Valid {
-		return false, "", "", errors.New("invalid token")
+		return false, nil, errors.New("invalid token")
 	}
 
-	return true, claims.UserID, claims.Role, nil
+	return true, claims, nil
 }
 
 // RefreshAccessToken generates a new access token using a valid refresh token
 func RefreshAccessToken(refreshTokenString string) (string, error) {
-	valid, userID, role, err := ValidateRefreshToken(refreshTokenString)
+	valid, claims, err := ValidateRefreshToken(refreshTokenString)
 	if err != nil || !valid {
 		return "", errors.New("invalid refresh token")
 	}
 
 	// Generate new access token
-	return GenerateAccessToken(userID, role)
+	return GenerateAccessToken(claims.UserID, claims.Role)
 }
 
 // ExtractUserID extracts user ID from a token without full validation

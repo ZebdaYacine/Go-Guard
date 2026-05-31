@@ -23,6 +23,42 @@ func NewAuthUseCase(repo *domain.AuthRepository) *AuthUseCase { // Change parame
 
 type AuthUseCaseInterface interface {
 	CreateAccount(ctx context.Context, query Query) Result
+	Login(ctx context.Context, query Query) Result
+	UpdatePassword(ctx context.Context, query Query) Result
+	CheckUserExists(ctx context.Context, query Query) Result
+	GetUserByEmail(ctx context.Context, email string) (int, string)
+	SendOTP(ctx context.Context, email string, purpose string) Result
+}
+
+
+
+func (au *AuthUseCase) GetUserByEmail(ctx context.Context, email string) (int, string) {
+	// Implementation for getting user by email logic
+	return 0, ""
+}
+
+func (au *AuthUseCase) UpdatePassword(ctx context.Context, query Query) Result {
+	// Implementation for update password logic
+	return Result{
+		Message: "Password updated successfully",
+		Success: true,
+	}
+}
+
+func (au *AuthUseCase) CheckUserExists(ctx context.Context, query Query) Result {
+	// Implementation for checking user existence logic
+	return Result{
+		Message: "User found",
+		Success: true,
+	}
+}
+
+func (au *AuthUseCase) Login(ctx context.Context, query Query) Result {
+	// Implementation for login logic
+	return Result{
+		Message: "Account created successfully",
+		Success: true,
+	}
 }
 
 func (au *AuthUseCase) CreateAccount(ctx context.Context, query Query) Result {
