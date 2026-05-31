@@ -7,16 +7,21 @@
 package di
 
 import (
+	"go-gaurd/api/controller/private"
 	"go-gaurd/api/controller/public"
 	"go-gaurd/core/config"
 	"go-gaurd/database"
 	"go-gaurd/feature/auth/domain"
 	"go-gaurd/feature/auth/usecase"
+	domain2 "go-gaurd/feature/profile/domain"
+	usecase2 "go-gaurd/feature/profile/usecase"
+
+	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
-func InitializeAuthApplication() (*public.AuthController, error) {
+func InitializeAuthApplication1(redisCache *database.RedisCache) (*public.AuthController, error) {
 	configConfig, err := config.NewConfig()
 	if err != nil {
 		return nil, err
@@ -27,10 +32,42 @@ func InitializeAuthApplication() (*public.AuthController, error) {
 	}
 	authRepository := domain.NewAuthRepository(databaseDatabase)
 	authUseCase := usecase.NewAuthUseCase(authRepository)
+	authController := public.NewAuthController(authUseCase, redisCache)
+	return authController, nil
+}
+
+func InitializeProfileApplication1(redisCache *database.RedisCache) (*private.ProfileController, error) {
+	configConfig, err := config.NewConfig()
+	if err != nil {
+		return nil, err
+	}
+	databaseDatabase, err := database.NewDatabase(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	profileRepository := domain2.NewProfileRepository(databaseDatabase)
+	profileUseCase := usecase2.NewProfileUseCase(profileRepository)
+	profileController := private.NewProfileController(profileUseCase, redisCache)
+	return profileController, nil
+}
+
+// InitializeRedis creates a single Redis instance
+func InitializeRedis1() (*database.RedisCache, error) {
+	configConfig, err := config.NewConfig()
+	if err != nil {
+		return nil, err
+	}
 	redisCache, err := database.NewRedisCache(configConfig)
 	if err != nil {
 		return nil, err
 	}
-	authController := public.NewAuthController(authUseCase, redisCache)
-	return authController, nil
+	return redisCache, nil
 }
+
+// wire.go:
+
+// Provider set for Redis cache (singleton)
+var RedisCacheSet1 = wire.NewSet(database.NewRedisCache, wire.Bind(new(database.RedisCache), new(*database.RedisCache)))
+
+// Provider set for Database
+var DatabaseSet1 = wire.NewSet(database.NewDatabase)

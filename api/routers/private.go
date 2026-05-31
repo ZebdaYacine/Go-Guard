@@ -2,18 +2,18 @@ package routers
 
 import (
 	"fmt"
-	"go-gaurd/api/controller/public"
+	"go-gaurd/api/controller/private"
 	"go-gaurd/api/security"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupPrivateRoutes(app *fiber.App, authController *public.AuthController) {
+func SetupPrivateRoutes(app *fiber.App, profileController *private.ProfileController) {
 
 	user := app.Group("/api/user")
-	user.Use(security.DetectClientIP(authController.RedisCache))
-	app.Use(security.RateLimitPerUser(authController.RedisCache, 10, 1*time.Minute))
+	user.Use(security.DetectClientIP(profileController.RedisCache))
+	app.Use(security.RateLimitPerUser(profileController.RedisCache, 10, 1*time.Minute))
 	user.Get("/profile", func(c *fiber.Ctx) error {
 		fmt.Println("YOU ARE INSIDE PROFILE ENDPOINT")
 

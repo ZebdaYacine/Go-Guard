@@ -18,5 +18,9 @@ sudo docker rm redis-server
 # Now create a new one
 sudo docker run -d --name redis-server -p 6379:6379 redis:latest
 
+
+# Start the container
+sudo docker start redis-server
+
 # Directly open Redis CLI
 sudo docker exec -it redis-server redis-cli
