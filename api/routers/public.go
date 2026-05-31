@@ -26,5 +26,6 @@ func SetupPublicRoutes(app *fiber.App, authController *public.AuthController) {
 	auth.Use(security.DetectClientIP(authController.RedisCache))
 	auth.Use(security.RateLimitPerGuest(authController.RedisCache, 10, 1*time.Minute))
 	auth.Post("/register", authController.Register)
+	auth.Post("/login", authController.Login)
 
 }

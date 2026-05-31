@@ -161,7 +161,7 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	access_token, err := security.GenerateAccessToken("23434", utils.RoleClient)
+	access_token, err := security.GenerateAccessToken("23434", utils.RoleUser)
 	if err != nil {
 		log.Printf("ERROR: Token generation failed: %v", err)
 		log.Fatalf(err.Error())
@@ -172,7 +172,7 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 	}
 	log.Println("Access Token generated successfully")
 
-	refresh_token, err := security.GenerateRefreshToken("23434", utils.RoleClient)
+	refresh_token, err := security.GenerateRefreshToken("23434", utils.RoleUser)
 	if err != nil {
 		log.Printf("ERROR: Token generation failed: %v", err)
 		log.Fatalf(err.Error())
