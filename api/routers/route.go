@@ -19,12 +19,12 @@ func SetupRoutes(app *fiber.App) {
 		log.Fatal("Failed to initialize Redis:", err)
 	}
 
-	authController, err := di.InitializeAuthApplication1(redisCache)
+	authController, err := di.InitializeAuthApplication(redisCache)
 	if err != nil {
 		log.Printf("Error initializing AuthApplication: %s", err)
 	}
 
-	profileController, err := di.InitializeProfileApplication1(redisCache)
+	profileController, err := di.InitializeProfileApplication(redisCache)
 	if err != nil {
 		log.Printf("Error initializing ProfileApplication: %s", err)
 	}

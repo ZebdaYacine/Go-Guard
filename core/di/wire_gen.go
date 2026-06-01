@@ -7,6 +7,7 @@
 package di
 
 import (
+	"github.com/google/wire"
 	"go-gaurd/api/controller/private"
 	"go-gaurd/api/controller/public"
 	"go-gaurd/core/config"
@@ -15,13 +16,11 @@ import (
 	"go-gaurd/feature/auth/usecase"
 	domain2 "go-gaurd/feature/profile/domain"
 	usecase2 "go-gaurd/feature/profile/usecase"
-
-	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
-func InitializeAuthApplication1(redisCache *database.RedisCache) (*public.AuthController, error) {
+func InitializeAuthApplication(redisCache *database.RedisCache) (*public.AuthController, error) {
 	configConfig, err := config.NewConfig()
 	if err != nil {
 		return nil, err
@@ -36,7 +35,7 @@ func InitializeAuthApplication1(redisCache *database.RedisCache) (*public.AuthCo
 	return authController, nil
 }
 
-func InitializeProfileApplication1(redisCache *database.RedisCache) (*private.ProfileController, error) {
+func InitializeProfileApplication(redisCache *database.RedisCache) (*private.ProfileController, error) {
 	configConfig, err := config.NewConfig()
 	if err != nil {
 		return nil, err
@@ -52,7 +51,7 @@ func InitializeProfileApplication1(redisCache *database.RedisCache) (*private.Pr
 }
 
 // InitializeRedis creates a single Redis instance
-func InitializeRedis1() (*database.RedisCache, error) {
+func InitializeRedis() (*database.RedisCache, error) {
 	configConfig, err := config.NewConfig()
 	if err != nil {
 		return nil, err
@@ -66,8 +65,9 @@ func InitializeRedis1() (*database.RedisCache, error) {
 
 // wire.go:
 
+// TODO FIX REDIS INITLAIZER
 // Provider set for Redis cache (singleton)
-var RedisCacheSet1 = wire.NewSet(database.NewRedisCache, wire.Bind(new(database.RedisCache), new(*database.RedisCache)))
+var RedisCacheSet = wire.NewSet(database.NewRedisCache, wire.Bind(new(database.RedisCache), new(*database.RedisCache)))
 
 // Provider set for Database
-var DatabaseSet1 = wire.NewSet(database.NewDatabase)
+var DatabaseSet = wire.NewSet(database.NewDatabase)
