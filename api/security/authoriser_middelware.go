@@ -18,7 +18,6 @@ func AuthoriserMiddleware(e *casbin.Enforcer) fiber.Handler {
 		log.Printf("Processing request: path=%s, method=%s", obj, act)
 
 		if api.IsPublicEndpoint(obj, act) {
-			log.Println("ssssssss")
 			return c.Next()
 		} else {
 
@@ -26,13 +25,13 @@ func AuthoriserMiddleware(e *casbin.Enforcer) fiber.Handler {
 			token, err := ExtractTokenFromHeader(authHeader)
 			if err != nil {
 				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-					"error": ">>> invalid or missing token",
+					"error": "invalid or missing token",
 				})
 			}
 			role, err := ExtractRole(token)
 			if err != nil {
 				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-					"error": ">>> invalid or missing token",
+					"error": "invalid or missing token",
 				})
 			}
 

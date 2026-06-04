@@ -16,7 +16,7 @@ import (
 )
 
 type AuthController struct {
-	AuthUsecase *usecase.AuthUseCase
+	AuthUsecase usecase.AuthUseCaseInterface
 	validate    *validator.Validate
 	RedisCache  *database.RedisCache
 }
@@ -31,7 +31,7 @@ type AuthControllerInterface interface {
 	CheckOTP(c *fiber.Ctx) error
 }
 
-func NewAuthController(authUsecase *usecase.AuthUseCase, redisCache *database.RedisCache) *AuthController {
+func NewAuthController(authUsecase usecase.AuthUseCaseInterface, redisCache *database.RedisCache) AuthControllerInterface {
 	log.Println("Initializing new AuthController")
 	return &AuthController{
 		AuthUsecase: authUsecase,
@@ -140,7 +140,7 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 	// Step 2: Prepare query for usecase
 	log.Println("Step 2: Preparing query for usecase")
 	query := usecase.Query{
-		User: usecase.User_Entity{
+		User: usecase.Login_Entity{
 			Email:    req.Email,
 			Password: req.Password,
 		},
@@ -494,9 +494,9 @@ func (ac *AuthController) CheckOTP(c *fiber.Ctx) error {
 			},
 		}
 
-		userID, role := ac.AuthUsecase.GetUserByEmail(ctx, query.User.Email)
+		userID, role := ac.AuthUsecase.GetUserByEmail(ctx, req.Email)
 		if userID == 0 {
-			log.Printf("Failed to get user ID: %s", query.User.Email)
+			log.Printf("Failed to get user ID: %s", req.Email)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to retrieve user details",
 				"success": false,

@@ -1,6 +1,9 @@
 package api
 
-import "log"
+import (
+	"log"
+	"strings"
+)
 
 type PublicRoute struct {
 	Path    string
@@ -13,6 +16,7 @@ func GetPublicEndpoints() []PublicRoute {
 		{Path: "/ready", Methods: []string{"GET"}},
 		{Path: "/api/guest/public/info", Methods: []string{"GET"}},
 		{Path: "/api/auth/register", Methods: []string{"POST"}},
+		{Path: "/api/auth/login", Methods: []string{"POST"}},
 	}
 }
 
@@ -37,8 +41,23 @@ func IsPublicEndpoint(path, method string) bool {
 			}
 		}
 		log.Printf("❌ Path found but method %s not allowed", method)
-	} else {
-		log.Printf("❌ Path not found in public endpoints")
+		return true
+	}
+	log.Printf("❌ Path not found in public endpoints")
+	return false
+}
+
+// Optional: Add case-insensitive method comparison
+func IsPublicEndpointCaseInsensitive(path, method string) bool {
+	// Convert method to uppercase for comparison
+	method = strings.ToUpper(method)
+
+	if methods, exists := PublicEndpoints[path]; exists {
+		for _, m := range methods {
+			if m == method {
+				return true
+			}
+		}
 	}
 	return false
 }

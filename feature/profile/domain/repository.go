@@ -10,14 +10,14 @@ type ProfileRepository struct {
 	DB *sql.DB
 }
 
-func NewProfileRepository(db *database.Database) *ProfileRepository {
-	return &ProfileRepository{DB: db.DB}
-}
-
 type ProfileRepositoryInterface interface {
 	GetAccount(ctx context.Context, query Query) Result
 	UpdateAccount(ctx context.Context, query Query) Result
 	ActiveAccount(ctx context.Context, query Query) Result
+}
+
+func NewProfileRepository(db *database.Database) *ProfileRepository {
+	return &ProfileRepository{DB: db.DB}
 }
 
 // ActiveAccount implements [ProfileRepositoryInterface].

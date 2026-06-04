@@ -1,58 +1,47 @@
-// // wire.go
-package di
+//go:build wireinject
+// +build wireinject
 
-// import (
-// 	"go-gaurd/api/controller/private"
-// 	"go-gaurd/api/controller/public"
-// 	"go-gaurd/core/config"
-// 	"go-gaurd/database"
-// 	"go-gaurd/feature/auth/domain"
-// 	"go-gaurd/feature/auth/usecase"
-// 	domain2 "go-gaurd/feature/profile/domain"
-// 	usecase2 "go-gaurd/feature/profile/usecase"
+package gen
 
-// 	"github.com/google/wire"
-// )
+import (
+	"go-gaurd/api/controller/private"
+	"go-gaurd/api/controller/public"
+	"go-gaurd/core/config"
+	"go-gaurd/database"
+	"go-gaurd/feature/auth/domain"
+	"go-gaurd/feature/auth/usecase"
+	profiledomain "go-gaurd/feature/profile/domain"
+	profileusecase "go-gaurd/feature/profile/usecase"
 
-// // TODO FIX REDIS INITLAIZER
-// // Provider set for Redis cache (singleton)
-// var RedisCacheSet = wire.NewSet(
-// 	database.NewRedisCache,
-// 	wire.Bind(new(database.RedisCache), new(*database.RedisCache)),
-// )
+	"github.com/google/wire"
+)
 
-// // Provider set for Database
-// var DatabaseSet = wire.NewSet(
-// 	database.NewDatabase,
-// )
+var (
+	ConfigSet   = wire.NewSet(config.NewConfig)
+	DatabaseSet = wire.NewSet(database.NewDatabase)
+	RedisSet    = wire.NewSet(database.NewRedisCache)
+	CoreSet     = wire.NewSet(ConfigSet, DatabaseSet, RedisSet)
+)
 
-// func InitializeAuthApplication(redisCache *database.RedisCache) (*public.AuthController, error) {
-// 	wire.Build(
-// 		config.NewConfig,
-// 		DatabaseSet,
-// 		domain.NewAuthRepository,
-// 		usecase.NewAuthUseCase,
-// 		public.NewAuthController,
-// 	)
-// 	return nil, nil
-// }
+// InitializeAll creates all dependencies once and returns them
+func InitializeAll() (*AppDependencies, error) {
+	wire.Build(
+		CoreSet,
+		domain.NewAuthRepository,
+		usecase.NewAuthUseCase,
+		public.NewAuthController,
+		profiledomain.NewProfileRepository,
+		profileusecase.NewProfileUseCase,
+		private.NewProfileController,
+		wire.Struct(new(AppDependencies), "*"),
+	)
+	return nil, nil
+}
 
-// func InitializeProfileApplication(redisCache *database.RedisCache) (*private.ProfileController, error) {
-// 	wire.Build(
-// 		config.NewConfig,
-// 		DatabaseSet,
-// 		domain2.NewProfileRepository,
-// 		usecase2.NewProfileUseCase,
-// 		private.NewProfileController,
-// 	)
-// 	return nil, nil
-// }
-
-// // InitializeRedis creates a single Redis instance
-// func InitializeRedis() (*database.RedisCache, error) {
-// 	wire.Build(
-// 		config.NewConfig,
-// 		database.NewRedisCache,
-// 	)
-// 	return nil, nil
-// }
+type AppDependencies struct {
+	Config            *config.Config
+	Redis             *database.RedisCache
+	Database          *database.Database
+	AuthController    public.AuthControllerInterface
+	ProfileController *private.ProfileController
+}

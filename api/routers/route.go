@@ -2,7 +2,7 @@ package routers
 
 import (
 	"go-gaurd/api/security"
-	"go-gaurd/core/di"
+	"go-gaurd/core/di/gen"
 	"log"
 	"os"
 
@@ -14,20 +14,14 @@ import (
 
 func SetupRoutes(app *fiber.App) {
 
-	redisCache, err := di.InitializeRedis()
+	appDependencies, err := gen.InitializeAll()
 	if err != nil {
-		log.Fatal("Failed to initialize Redis:", err)
+		log.Fatal("Error initializing all dependencies:", err)
 	}
 
-	authController, err := di.InitializeAuthApplication(redisCache)
-	if err != nil {
-		log.Printf("Error initializing AuthApplication: %s", err)
-	}
-
-	profileController, err := di.InitializeProfileApplication(redisCache)
-	if err != nil {
-		log.Printf("Error initializing ProfileApplication: %s", err)
-	}
+	authController := appDependencies.AuthController
+	profileController := appDependencies.ProfileController
+	redis := appDependencies.Redis
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -49,10 +43,10 @@ func SetupRoutes(app *fiber.App) {
 
 	app.Use(requestid.New())
 	app.Use(security.SecurityHeaders())
-	app.Use(security.AuthenticatorMiddleware(authController.RedisCache))
+	app.Use(security.AuthenticatorMiddleware(redis))
 	app.Use(security.AuthoriserMiddleware(e))
 
-	SetupPublicRoutes(app, authController)
+	SetupPublicRoutes(app, authController, redis)
 	SetupPrivateRoutes(app, profileController)
 	SetupAdminRouter(app, authController, profileController)
 }

@@ -10,11 +10,13 @@ type User_Entity struct {
 	Picture   string
 }
 
-type Query struct {
-	User User_Entity
+type Login_Entity struct {
+	Email    string
+	Password string
 }
 
 type Result struct {
-	User    User_Entity
+	User    interface{}
 	Success bool
+	Error   string
 }

@@ -44,7 +44,6 @@ func AuthenticatorMiddleware(redisCache *database.RedisCache) fiber.Handler {
 			}
 
 			// Store user info in Fiber's context locals
-			// TODO USE REDIS SERVER
 			rdb := redisCache.Cache
 			rdb.Set(c.Context(), "userID", userID, 5*time.Minute)
 			rdb.Set(c.Context(), "role", role, 5*time.Minute)

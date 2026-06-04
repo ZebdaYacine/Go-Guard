@@ -3,6 +3,7 @@ p, guest, /health, GET
 p, guest, /ready, GET
 p, guest, /api/guest/public/info, GET
 p, guest, /api/auth/register, POST
+p, guest, /api/auth/login, POST
 
 # USER
 p, user, /api/user/profile, GET

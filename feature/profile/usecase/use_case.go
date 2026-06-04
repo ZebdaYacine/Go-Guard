@@ -17,16 +17,16 @@ type ProfileUseCase struct {
 	repo *domain.ProfileRepository // Change to pointer to struct
 }
 
-func NewProfileUseCase(repo *domain.ProfileRepository) *ProfileUseCase {
-	return &ProfileUseCase{
-		repo: repo,
-	}
-}
-
 type ProfileUseCaseInterface interface {
 	GetAccount(ctx context.Context, query Query) Result
 	UpdateAccount(ctx context.Context, query Query) Result
 	ActiveAccount(ctx context.Context, query Query) Result
+}
+
+func NewProfileUseCase(repo *domain.ProfileRepository) *ProfileUseCase {
+	return &ProfileUseCase{
+		repo: repo,
+	}
 }
 
 // ActiveAccount implements [ProfileUseCaseInterface].
