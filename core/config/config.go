@@ -16,6 +16,9 @@ type Config struct {
 	REDIS_PORT           string
 	ACCESS_TOKEN_SECRET  string
 	REFRESH_TOKEN_SECRET string
+	FROM                 string
+	SMTP_PASS            string
+	SMTP_USER            string
 }
 
 func NewConfig() (*Config, error) {
@@ -34,5 +37,8 @@ func NewConfig() (*Config, error) {
 		REDIS_PORT:           os.Getenv("REDIS_PORT"),
 		ACCESS_TOKEN_SECRET:  os.Getenv("ACCESS_TOKEN_SECRET"),
 		REFRESH_TOKEN_SECRET: os.Getenv("REFRESH_TOKEN_SECRET"),
+		FROM:                 os.Getenv("FROM"),
+		SMTP_USER:            os.Getenv("SMTP_USER"),
+		SMTP_PASS:            os.Getenv("SMTP_PASS"),
 	}, nil
 }
