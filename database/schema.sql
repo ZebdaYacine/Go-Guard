@@ -2,12 +2,12 @@ create database aicha;
 use aicha;
 
 create table users(
-    ID int8 primary key auto_increment,
-    USERNAME varchar(50),
-    EMAIL varchar(30),
-    PHONE varchar(15),
-    PASSWORD varchar(100),
-    ROLE INT,
-    SEX CHAR(1),
-    PICTURE varchar(200)
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    username varchar(50) UNIQUE,
+    email varchar(30) UNIQUE,
+    phone varchar(40) UNIQUE,
+    password varchar(100),
+    role INT,
+    sex CHAR(1),
+    picture varchar(200)
 )

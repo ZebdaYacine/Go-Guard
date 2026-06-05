@@ -60,18 +60,28 @@ func (au *AuthUseCase) CreateAccount(ctx context.Context, query Query) Result {
 			Success: false,
 		}
 	}
-	user := query.User.(domain.User_Entity)
+
+	user_entity := query.User.(User_Entity)
+	user := domain.User_Entity{
+		User_name: user_entity.User_name,
+		Email:     user_entity.Email,
+		Phone:     user_entity.Phone,
+		Password:  user_entity.Password,
+		Role:      user_entity.Role,
+		Sex:       user_entity.Sex,
+		Picture:   user_entity.Picture,
+	}
 
 	result := au.UserRepository.CreateAccount(ctx, user)
 	if !result.Success {
 		return Result{
 			User:    query,
-			Message: "Account creation failed",
+			Message: result.Error,
 			Success: false,
 		}
 	}
-
 	return Result{
+		Id:      result.Id,
 		User:    User_Entity(result.User.(domain.User_Entity)),
 		Message: "Account created successfully",
 		Success: true,
@@ -98,8 +108,17 @@ func (a *AuthUseCase) Login(ctx context.Context, query Query) Result {
 
 	result := a.UserRepository.Login(ctx, l)
 
+	if !result.Success {
+		return Result{
+			User:    login_entity,
+			Message: result.Error,
+			Success: false,
+		}
+	}
+
 	return Result{
 		User:    result.User,
+		Id:      result.Id,
 		Message: "Login successful",
 		Success: true,
 	}

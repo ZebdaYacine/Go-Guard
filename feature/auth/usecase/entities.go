@@ -20,7 +20,8 @@ type Query struct {
 }
 
 type Result struct {
-	User    interface{} `json:"user,omitempty"`
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
+	User    interface{}
+	Success bool
+	Id      string
+	Message string
 }

@@ -3,6 +3,10 @@ package utils
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"strings"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -30,13 +34,55 @@ func GetValidRoles(role string) int {
 	}
 }
 
+func GetCodeGender(sex string) string {
+	if sex == "male" {
+		return "M"
+	}
+	return "F"
+}
+
 func HashPasswordSHA256(password string) string {
 	hash := sha256.Sum256([]byte(password))
 	return hex.EncodeToString(hash[:])
 }
 
-// CheckPasswordHashSHA256 compares a password with its SHA256 hash
 func CheckPasswordHashSHA256(password, hash string) bool {
 	hashedPassword := HashPasswordSHA256(password)
 	return hashedPassword == hash
+}
+
+func HandleMysqlError(err error) string {
+	var mysqlErr *mysql.MySQLError
+	if errors.As(err, &mysqlErr) {
+		errorMsg := mysqlErr.Message
+		switch mysqlErr.Number {
+		case 1062:
+			switch {
+			case strings.Contains(errorMsg, "email"):
+				return "Email is already registered"
+			case strings.Contains(errorMsg, "username"):
+				return "Username is already taken"
+			case strings.Contains(errorMsg, "phone"):
+				return "Phone number is already registered"
+			default:
+				return "Duplicate entry detected"
+			}
+		case 1452:
+			return "Referenced record does not exist (Foreign key failure)"
+		case 1048:
+			return "Required fields cannot be empty"
+		case 1406:
+			return "Provided data exceeds the maximum allowed length"
+		case 1040:
+			return "Database is overloaded: too many connections active"
+		case 2006:
+			return "Database connection was lost or timed out"
+		case 1045:
+			return "Database authentication failed (Access denied)"
+
+		default:
+			return "A database restriction error occurred"
+		}
+	}
+	return "An unexpected error occurred"
 }

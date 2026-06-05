@@ -104,7 +104,7 @@ func (ac *AuthController) Register(c *fiber.Ctx) error {
 	// Step 4: Handle failure case
 	if !result.Success {
 		log.Printf("Account creation failed: %s", result.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": result.Message,
 			"success": result.Success,
 			"user":    result.User,
@@ -154,17 +154,19 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 	// Step 4: Handle failure case
 	if !result.Success {
 		log.Printf("Account login failed: %s", result.Message)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
 			"message": result.Message,
 			"success": result.Success,
 			"user":    result.User,
 		})
 	}
 
-	access_token, err := security.GenerateAccessToken("23434", utils.RoleUser)
+	uuid := result.Id
+
+	access_token, err := security.GenerateAccessToken(uuid, utils.RoleUser)
 	if err != nil {
 		log.Printf("ERROR: Token generation failed: %v", err)
-		log.Fatalf(err.Error())
+		log.Fatalf("%s", err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Error generating access token",
 			"success": false,
@@ -172,10 +174,10 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 	}
 	log.Println("Access Token generated successfully")
 
-	refresh_token, err := security.GenerateRefreshToken("23434", utils.RoleUser)
+	refresh_token, err := security.GenerateRefreshToken(uuid, utils.RoleUser)
 	if err != nil {
 		log.Printf("ERROR: Token generation failed: %v", err)
-		log.Fatalf(err.Error())
+		log.Fatalf("%s", err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Error generating refresh token",
 			"success": false,
@@ -192,7 +194,7 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 		RefrechToken: refresh_token,
 	}
 
-	return c.Status(fiber.StatusCreated).JSON(response)
+	return c.Status(fiber.StatusOK).JSON(response)
 }
 
 func (ac *AuthController) ForgetPassword(c *fiber.Ctx) error {

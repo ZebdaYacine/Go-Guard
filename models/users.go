@@ -24,14 +24,14 @@ import (
 
 // User is an object representing the database table.
 type User struct {
-	ID       int64       `boil:"ID" json:"ID" toml:"ID" yaml:"ID"`
-	USERNAME null.String `boil:"USERNAME" json:"USERNAME,omitempty" toml:"USERNAME" yaml:"USERNAME,omitempty"`
-	EMAIL    null.String `boil:"EMAIL" json:"EMAIL,omitempty" toml:"EMAIL" yaml:"EMAIL,omitempty"`
-	PHONE    null.String `boil:"PHONE" json:"PHONE,omitempty" toml:"PHONE" yaml:"PHONE,omitempty"`
-	PASSWORD null.String `boil:"PASSWORD" json:"PASSWORD,omitempty" toml:"PASSWORD" yaml:"PASSWORD,omitempty"`
-	ROLE     null.Int    `boil:"ROLE" json:"ROLE,omitempty" toml:"ROLE" yaml:"ROLE,omitempty"`
-	SEX      null.String `boil:"SEX" json:"SEX,omitempty" toml:"SEX" yaml:"SEX,omitempty"`
-	PICTURE  null.String `boil:"PICTURE" json:"PICTURE,omitempty" toml:"PICTURE" yaml:"PICTURE,omitempty"`
+	ID       string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Username null.String `boil:"username" json:"username,omitempty" toml:"username" yaml:"username,omitempty"`
+	Email    null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	Phone    null.String `boil:"phone" json:"phone,omitempty" toml:"phone" yaml:"phone,omitempty"`
+	Password null.String `boil:"password" json:"password,omitempty" toml:"password" yaml:"password,omitempty"`
+	Role     null.Int    `boil:"role" json:"role,omitempty" toml:"role" yaml:"role,omitempty"`
+	Sex      null.String `boil:"sex" json:"sex,omitempty" toml:"sex" yaml:"sex,omitempty"`
+	Picture  null.String `boil:"picture" json:"picture,omitempty" toml:"picture" yaml:"picture,omitempty"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -39,62 +39,64 @@ type User struct {
 
 var UserColumns = struct {
 	ID       string
-	USERNAME string
-	EMAIL    string
-	PHONE    string
-	PASSWORD string
-	ROLE     string
-	SEX      string
-	PICTURE  string
+	Username string
+	Email    string
+	Phone    string
+	Password string
+	Role     string
+	Sex      string
+	Picture  string
 }{
-	ID:       "ID",
-	USERNAME: "USERNAME",
-	EMAIL:    "EMAIL",
-	PHONE:    "PHONE",
-	PASSWORD: "PASSWORD",
-	ROLE:     "ROLE",
-	SEX:      "SEX",
-	PICTURE:  "PICTURE",
+	ID:       "id",
+	Username: "username",
+	Email:    "email",
+	Phone:    "phone",
+	Password: "password",
+	Role:     "role",
+	Sex:      "sex",
+	Picture:  "picture",
 }
 
 var UserTableColumns = struct {
 	ID       string
-	USERNAME string
-	EMAIL    string
-	PHONE    string
-	PASSWORD string
-	ROLE     string
-	SEX      string
-	PICTURE  string
+	Username string
+	Email    string
+	Phone    string
+	Password string
+	Role     string
+	Sex      string
+	Picture  string
 }{
-	ID:       "users.ID",
-	USERNAME: "users.USERNAME",
-	EMAIL:    "users.EMAIL",
-	PHONE:    "users.PHONE",
-	PASSWORD: "users.PASSWORD",
-	ROLE:     "users.ROLE",
-	SEX:      "users.SEX",
-	PICTURE:  "users.PICTURE",
+	ID:       "users.id",
+	Username: "users.username",
+	Email:    "users.email",
+	Phone:    "users.phone",
+	Password: "users.password",
+	Role:     "users.role",
+	Sex:      "users.sex",
+	Picture:  "users.picture",
 }
 
 // Generated where
 
-type whereHelperint64 struct{ field string }
+type whereHelperstring struct{ field string }
 
-func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
+func (w whereHelperstring) EQ(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperstring) NEQ(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperstring) LT(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperstring) LTE(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperstring) GT(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperstring) GTE(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperstring) LIKE(x string) qm.QueryMod  { return qm.Where(w.field+" LIKE ?", x) }
+func (w whereHelperstring) NLIKE(x string) qm.QueryMod { return qm.Where(w.field+" NOT LIKE ?", x) }
+func (w whereHelperstring) IN(slice []string) qm.QueryMod {
 	values := make([]any, 0, len(slice))
 	for _, value := range slice {
 		values = append(values, value)
 	}
 	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
-func (w whereHelperint64) NIN(slice []int64) qm.QueryMod {
+func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	values := make([]any, 0, len(slice))
 	for _, value := range slice {
 		values = append(values, value)
@@ -185,23 +187,23 @@ func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNu
 func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var UserWhere = struct {
-	ID       whereHelperint64
-	USERNAME whereHelpernull_String
-	EMAIL    whereHelpernull_String
-	PHONE    whereHelpernull_String
-	PASSWORD whereHelpernull_String
-	ROLE     whereHelpernull_Int
-	SEX      whereHelpernull_String
-	PICTURE  whereHelpernull_String
+	ID       whereHelperstring
+	Username whereHelpernull_String
+	Email    whereHelpernull_String
+	Phone    whereHelpernull_String
+	Password whereHelpernull_String
+	Role     whereHelpernull_Int
+	Sex      whereHelpernull_String
+	Picture  whereHelpernull_String
 }{
-	ID:       whereHelperint64{field: "`users`.`ID`"},
-	USERNAME: whereHelpernull_String{field: "`users`.`USERNAME`"},
-	EMAIL:    whereHelpernull_String{field: "`users`.`EMAIL`"},
-	PHONE:    whereHelpernull_String{field: "`users`.`PHONE`"},
-	PASSWORD: whereHelpernull_String{field: "`users`.`PASSWORD`"},
-	ROLE:     whereHelpernull_Int{field: "`users`.`ROLE`"},
-	SEX:      whereHelpernull_String{field: "`users`.`SEX`"},
-	PICTURE:  whereHelpernull_String{field: "`users`.`PICTURE`"},
+	ID:       whereHelperstring{field: "`users`.`id`"},
+	Username: whereHelpernull_String{field: "`users`.`username`"},
+	Email:    whereHelpernull_String{field: "`users`.`email`"},
+	Phone:    whereHelpernull_String{field: "`users`.`phone`"},
+	Password: whereHelpernull_String{field: "`users`.`password`"},
+	Role:     whereHelpernull_Int{field: "`users`.`role`"},
+	Sex:      whereHelpernull_String{field: "`users`.`sex`"},
+	Picture:  whereHelpernull_String{field: "`users`.`picture`"},
 }
 
 // UserRels is where relationship names are stored.
@@ -221,10 +223,10 @@ func (*userR) NewStruct() *userR {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"ID", "USERNAME", "EMAIL", "PHONE", "PASSWORD", "ROLE", "SEX", "PICTURE"}
-	userColumnsWithoutDefault = []string{"USERNAME", "EMAIL", "PHONE", "PASSWORD", "ROLE", "SEX", "PICTURE"}
-	userColumnsWithDefault    = []string{"ID"}
-	userPrimaryKeyColumns     = []string{"ID"}
+	userAllColumns            = []string{"id", "username", "email", "phone", "password", "role", "sex", "picture"}
+	userColumnsWithoutDefault = []string{"username", "email", "phone", "password", "role", "sex", "picture"}
+	userColumnsWithDefault    = []string{"id"}
+	userPrimaryKeyColumns     = []string{"id"}
 	userGeneratedColumns      = []string{}
 )
 
@@ -546,7 +548,7 @@ func Users(mods ...qm.QueryMod) userQuery {
 
 // FindUser retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindUser(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*User, error) {
+func FindUser(ctx context.Context, exec boil.ContextExecutor, iD string, selectCols ...string) (*User, error) {
 	userObj := &User{}
 
 	sel := "*"
@@ -554,7 +556,7 @@ func FindUser(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCo
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `users` where `ID`=?", sel,
+		"select %s from `users` where `id`=?", sel,
 	)
 
 	q := queries.Raw(query, iD)
@@ -633,26 +635,15 @@ func (o *User) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	result, err := exec.ExecContext(ctx, cache.query, vals...)
+	_, err = exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "models: unable to insert into users")
 	}
 
-	var lastID int64
 	var identifierCols []any
 
 	if len(cache.retMapping) == 0 {
-		goto CacheNoHooks
-	}
-
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = int64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == userMapping["ID"] {
 		goto CacheNoHooks
 	}
 
@@ -809,7 +800,10 @@ func (o UserSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 }
 
 var mySQLUserUniqueColumns = []string{
-	"ID",
+	"id",
+	"username",
+	"email",
+	"phone",
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
@@ -908,27 +902,16 @@ func (o *User) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColu
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	result, err := exec.ExecContext(ctx, cache.query, vals...)
+	_, err = exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "models: unable to upsert for users")
 	}
 
-	var lastID int64
 	var uniqueMap []uint64
 	var nzUniqueCols []any
 
 	if len(cache.retMapping) == 0 {
-		goto CacheNoHooks
-	}
-
-	lastID, err = result.LastInsertId()
-	if err != nil {
-		return ErrSyncFail
-	}
-
-	o.ID = int64(lastID)
-	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == userMapping["ID"] {
 		goto CacheNoHooks
 	}
 
@@ -970,7 +953,7 @@ func (o *User) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), userPrimaryKeyMapping)
-	sql := "DELETE FROM `users` WHERE `ID`=?"
+	sql := "DELETE FROM `users` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1106,9 +1089,9 @@ func (o *UserSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // UserExists checks if the User row exists.
-func UserExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
+func UserExists(ctx context.Context, exec boil.ContextExecutor, iD string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `users` where `ID`=? limit 1)"
+	sql := "select exists(select 1 from `users` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)

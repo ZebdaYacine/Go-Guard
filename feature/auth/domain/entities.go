@@ -17,6 +17,7 @@ type Login_Entity struct {
 
 type Result struct {
 	User    interface{}
+	Id      string
 	Success bool
 	Error   string
 }
