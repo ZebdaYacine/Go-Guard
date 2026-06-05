@@ -17,15 +17,17 @@ func GetPublicEndpoints() []PublicRoute {
 		{Path: "/api/guest/public/info", Methods: []string{"GET"}},
 		{Path: "/api/auth/register", Methods: []string{"POST"}},
 		{Path: "/api/auth/login", Methods: []string{"POST"}},
+		{Path: "/api/auth/forget-password", Methods: []string{"POST"}},
 	}
 }
 
 var PublicEndpoints = map[string][]string{
-	"/health":                {"GET"},
-	"/ready":                 {"GET"},
-	"/api/guest/public/info": {"GET"},
-	"/api/auth/register":     {"POST"},
-	"/api/auth/login":        {"POST"},
+	"/health":                   {"GET"},
+	"/ready":                    {"GET"},
+	"/api/guest/public/info":    {"GET"},
+	"/api/auth/register":        {"POST"},
+	"/api/auth/login":           {"POST"},
+	"/api/auth/forget-password": {"POST"},
 }
 
 func IsPublicEndpoint(path, method string) bool {

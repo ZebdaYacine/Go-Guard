@@ -21,11 +21,8 @@ type AuthUseCase struct {
 type AuthUseCaseInterface interface {
 	CreateAccount(ctx context.Context, query Query) Result
 	Login(ctx context.Context, query Query) Result
-	UpdatePassword(ctx context.Context, query Query) Result
-	ForgetPassword(ctx context.Context, query Query) Result
-	CheckUserExists(ctx context.Context, query Query) Result
-	GetUserByEmail(ctx context.Context, email string) (int, string)
-	SendOTP(ctx context.Context, email string, purpose string) Result
+	RestPassword(ctx context.Context, query Query) Result
+	CheckUserExists(ctx context.Context, email string) Result
 }
 
 func NewAuthUseCase(repo domain.AuthRepositoryInterface) AuthUseCaseInterface {
@@ -43,11 +40,6 @@ func validate_entity(entity interface{}) error {
 		}
 	}
 	return err
-}
-
-// CheckUserExists implements [AuthUseCaseInterface].
-func (a *AuthUseCase) CheckUserExists(ctx context.Context, query Query) Result {
-	panic("unimplemented")
 }
 
 // CreateAccount implements [AuthUseCaseInterface].
@@ -125,13 +117,20 @@ func (a *AuthUseCase) Login(ctx context.Context, query Query) Result {
 }
 
 // ForgetPassword implements [AuthUseCaseInterface].
-func (a *AuthUseCase) ForgetPassword(ctx context.Context, query Query) Result {
-	panic("unimplemented")
-}
-
-// GetUserByEmail implements [AuthUseCaseInterface].
-func (a *AuthUseCase) GetUserByEmail(ctx context.Context, email string) (int, string) {
-	panic("unimplemented")
+func (a *AuthUseCase) CheckUserExists(ctx context.Context, email string) Result {
+	result := a.UserRepository.GetUserByEmail(ctx, email)
+	if user := result.User; user == nil {
+		return Result{
+			User:    nil,
+			Success: false,
+			Message: result.Error,
+		}
+	}
+	return Result{
+		User:    nil,
+		Success: true,
+		Message: "User found",
+	}
 }
 
 // SendOTP implements [AuthUseCaseInterface].
@@ -139,7 +138,46 @@ func (a *AuthUseCase) SendOTP(ctx context.Context, email string, purpose string)
 	panic("unimplemented")
 }
 
-// UpdatePassword implements [AuthUseCaseInterface].
-func (a *AuthUseCase) UpdatePassword(ctx context.Context, query Query) Result {
-	panic("unimplemented")
+// RestPassword implements [AuthUseCaseInterface].
+func (a *AuthUseCase) RestPassword(ctx context.Context, query Query) Result {
+
+	resetPassword_entity := query.User.(ResetPassword_Entity)
+	err := validate_entity(resetPassword_entity)
+
+	if err != nil {
+		return Result{
+			User:    resetPassword_entity,
+			Message: "Invalid Input",
+			Success: false,
+		}
+	}
+
+	if resetPassword_entity.ConfirmePassword != resetPassword_entity.NewPassword {
+		return Result{
+			User:    resetPassword_entity,
+			Message: "Passwords do not match",
+			Success: false,
+		}
+	}
+
+	q := domain.ResetPassword_Entity{
+		Email:       resetPassword_entity.Email,
+		NewPassword: resetPassword_entity.NewPassword,
+	}
+
+	result := a.UserRepository.RestPassword(ctx, q)
+
+	if !result.Success {
+		return Result{
+			User:    resetPassword_entity,
+			Message: "Error processing password",
+			Success: false,
+		}
+	}
+
+	return Result{
+		User:    resetPassword_entity,
+		Message: "Password reset successfully",
+		Success: true,
+	}
 }

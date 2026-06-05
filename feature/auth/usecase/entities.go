@@ -15,6 +15,12 @@ type Login_Entity struct {
 	Password string `validate:"required,min=8"`
 }
 
+type ResetPassword_Entity struct {
+	Email            string `validate:"required,email"`
+	NewPassword      string `validate:"required,min=8"`
+	ConfirmePassword string `validate:"required,min=8"`
+}
+
 type Query struct {
 	User interface{} `validate:"required"`
 }

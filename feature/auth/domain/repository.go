@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"go-gaurd/core/utils"
 	"go-gaurd/database"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/gofrs/uuid"
 )
 
@@ -25,6 +27,8 @@ func NewAuthRepository(db *database.Database) AuthRepositoryInterface {
 type AuthRepositoryInterface interface {
 	CreateAccount(ctx context.Context, u User_Entity) Result
 	Login(ctx context.Context, l Login_Entity) Result
+	GetUserByEmail(ctx context.Context, email string) Result
+	RestPassword(ctx context.Context, u ResetPassword_Entity) Result
 }
 
 func (ua *AuthRepository) CreateAccount(ctx context.Context, u User_Entity) Result {
@@ -137,5 +141,102 @@ func (ua *AuthRepository) Login(ctx context.Context, l Login_Entity) Result {
 		Success: true,
 		Id:      user.ID,
 		Error:   "",
+	}
+}
+
+// GetUserByEmail implements [AuthRepositoryInterface].
+func (ua *AuthRepository) GetUserByEmail(ctx context.Context, email string) Result {
+	boil.SetDB(ua.DB)
+	boil.DebugMode = true
+
+	user, err := models.Users(
+		models.UserWhere.Email.EQ(null.StringFrom(email)),
+	).One(ctx, ua.DB)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return Result{
+				User:    nil,
+				Success: false,
+				Error:   "User not found",
+			}
+		}
+		fmt.Printf("error querying user: %v \n", err)
+		return Result{
+			User:    nil,
+			Success: false,
+			Error:   "database error",
+		}
+
+	}
+
+	u := User_Entity{
+		User_name: user.Username.String,
+		Email:     user.Email.String,
+		Phone:     user.Phone.String,
+	}
+
+	return Result{
+		User:    u,
+		Success: true,
+		Id:      user.ID,
+		Error:   "",
+	}
+}
+
+// RestPassword implements [AuthRepositoryInterface].
+// RestPassword implements [AuthRepositoryInterface].
+func (ua *AuthRepository) RestPassword(ctx context.Context, u ResetPassword_Entity) Result {
+	boil.SetDB(ua.DB)
+	boil.DebugMode = true
+
+	// Step 1: Get user from database
+	user, err := models.Users(
+		qm.Where("email = ?", u.Email),
+	).One(ctx, ua.DB)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Result{
+				User:    u,
+				Error:   "User not found",
+				Success: false,
+			}
+		}
+		return Result{
+			User:    u,
+			Error:   "Database error: " + err.Error(),
+			Success: false,
+		}
+	}
+
+	// Step 2: Hash the new password
+	hashedPassword := utils.HashPasswordSHA256(u.NewPassword)
+	if hashedPassword == "" {
+		return Result{
+			User:    u,
+			Error:   "Failed to hash password",
+			Success: false,
+		}
+	}
+
+	// Step 3: Update the user's password
+	user.Password = null.StringFrom(hashedPassword)
+
+	// Step 4: Save to database
+	_, err = user.Update(ctx, ua.DB, boil.Infer())
+	if err != nil {
+		return Result{
+			User:    u,
+			Error:   "Failed to update password: " + err.Error(),
+			Success: false,
+		}
+	}
+
+	// Step 5: Return success
+	return Result{
+		User:    u,
+		Id:      user.ID,
+		Success: true,
 	}
 }

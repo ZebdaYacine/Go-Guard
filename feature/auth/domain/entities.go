@@ -15,6 +15,11 @@ type Login_Entity struct {
 	Password string
 }
 
+type ResetPassword_Entity struct {
+	Email       string
+	NewPassword string
+}
+
 type Result struct {
 	User    interface{}
 	Id      string

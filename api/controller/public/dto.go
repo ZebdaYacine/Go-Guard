@@ -37,9 +37,9 @@ type SendOTPRequest struct {
 }
 
 type CheckOTPRequest struct {
-	Email string `json:"email" validate:"required,email"`
-	OTP   string `json:"otp" validate:"required,len=6"`
-	Type  string `json:"type" validate:"required"` // verification, forgetpassword, login
+	Email       string `json:"email" validate:"required,email"`
+	OTP         string `json:"otp" validate:"required,len=6"`
+	Type        string `json:"type" validate:"required"`
 }
 
 // Response structs

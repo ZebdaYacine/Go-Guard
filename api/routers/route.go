@@ -43,7 +43,7 @@ func SetupRoutes(app *fiber.App) {
 
 	app.Use(requestid.New())
 	app.Use(security.SecurityHeaders())
-	app.Use(security.AuthenticatorMiddleware(redis))
+	app.Use(security.AuthenticatorMiddleware(e, redis))
 	app.Use(security.AuthoriserMiddleware(e))
 
 	SetupPublicRoutes(app, authController, redis)

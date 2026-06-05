@@ -28,5 +28,8 @@ func SetupPublicRoutes(app *fiber.App, authController public.AuthControllerInter
 	auth.Use(security.RateLimitPerGuest(redisCache, 10, 1*time.Minute))
 	auth.Post("/register", authController.Register)
 	auth.Post("/login", authController.Login)
+	auth.Post("/forget-password", authController.ForgetPassword)
+	auth.Get("/check-otp", authController.CheckOTP)
+	auth.Put("/rest-password", authController.RestPassword)
 
 }
