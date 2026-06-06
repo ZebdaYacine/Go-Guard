@@ -14,3 +14,7 @@ type ResetPasswordRequest struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }
+
+type LogoutRequest struct {
+	DeviceId string `json:"device_id" validate:"required"`
+}

@@ -1,10 +1,8 @@
 package security
 
 import (
-	"fmt"
 	"go-gaurd/database"
 	"log"
-	"time"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +26,7 @@ func AuthenticatorMiddleware(e *casbin.Enforcer, redisCache *database.RedisCache
 		}
 
 		if guestAllowed {
-			log.Printf("✅ Guest access granted for %s %s", act, obj)
+			log.Printf(" Guest access granted for %s %s", act, obj)
 			return c.Next()
 		}
 
@@ -45,24 +43,13 @@ func AuthenticatorMiddleware(e *casbin.Enforcer, redisCache *database.RedisCache
 		}
 
 		// Validate token
-		userID, role, _, err := ValidateAccessToken(token)
+		_, _, _, _, err = ValidateAccessToken(token)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error":   "Invalid or expired token",
 				"message": err.Error(),
 			})
 		}
-
-		// Optional: Store in Redis if needed for session management
-		ctx := c.Context()
-		sessionKey := fmt.Sprintf("user_session:%s", userID)
-
-		// Store session info in Redis with expiration
-		err = redisCache.Cache.Set(ctx, sessionKey, map[string]interface{}{
-			"userID": userID,
-			"role":   role,
-			"token":  token,
-		}, 5*time.Minute).Err()
 
 		return c.Next()
 	}

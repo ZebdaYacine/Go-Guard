@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type AuthController struct {
@@ -116,92 +117,111 @@ func (ac *AuthController) Register(c *fiber.Ctx) error {
 }
 
 func (ac *AuthController) Login(c *fiber.Ctx) error {
-	log.Println("========== LOGIN ENDPOINT STARTED ==========")
+	log.Println("========== LOGIN STARTED ==========")
 
 	var req LoginRequest
 	ctx := c.Context()
 
-	// Step 1: Validate request body
-	log.Println("Step 1: Validating request body")
-	err := ac.validateBody(c, &req)
-	if err != nil {
-		log.Printf("Validation failed, returning error response: %v", err)
+	// =========================
+	// 1. Validate request
+	// =========================
+	log.Println("Step 1: Validate request body")
+
+	if err := ac.validateBody(c, &req); err != nil {
+		log.Printf("Validation error: %v", err)
 		return err
 	}
-	log.Printf("Request body validated successfully for email: %s", req.Email)
 
-	// Step 2: Prepare query for usecase
-	log.Println("Step 2: Preparing query for usecase")
+	log.Printf("Login attempt for email: %s", req.Email)
+
+	// =========================
+	// 2. Call usecase
+	// =========================
+	log.Println("Step 2: Calling AuthUsecase.Login")
+
 	query := usecase.Query{
 		User: usecase.Login_Entity{
 			Email:    req.Email,
 			Password: req.Password,
 		},
 	}
-	log.Printf("Query prepared for user: %s ", req.Email)
 
-	// Step 3: Create account via usecase
-	log.Println("Step 3: Logging in account via AuthUsecase")
 	result := ac.AuthUsecase.Login(ctx, query)
 
-	// Step 4: Handle failure case
 	if !result.Success {
-		log.Printf("Account login failed: %s", result.Message)
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		log.Printf("Login failed: %s", result.Message)
+
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": result.Message,
-			"success": result.Success,
-			"user":    result.User,
-		})
-	}
-
-	uuid := result.Id
-
-	access_token, err := security.GenerateAccessToken(uuid, utils.RoleUser)
-	if err != nil {
-		log.Printf("ERROR: Token generation failed: %v", err)
-		log.Fatalf("%s", err.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Error generating access token",
-			"success": false,
-		})
-	}
-	log.Println("Access Token generated successfully")
-
-	refresh_token, err := security.GenerateRefreshToken(uuid, utils.RoleUser)
-	if err != nil {
-		log.Printf("ERROR: Token generation failed: %v", err)
-		log.Fatalf("%s", err.Error())
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Error generating refresh token",
-			"success": false,
-		})
-	}
-	log.Println("Refresh Token generated successfully")
-
-	redisKey := fmt.Sprintf("refresh-token:%s", uuid)
-
-	ac.RedisCache.Cache.Del(ctx, redisKey)
-
-	// Store new OTP with 10 minutes expiration
-	err = ac.RedisCache.Cache.Set(ctx, redisKey, refresh_token, 10*time.Minute).Err()
-	if err != nil {
-		log.Printf("Failed to store OTP in Redis: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to process request. Please try again.",
 			"success": false,
 		})
 	}
 
-	log.Printf("Account logged in successfully for Email: %s", req.Email)
-	response := LoginResponse{
+	userID := result.Id
+
+	// =========================
+	// 3. Generate tokens
+	// =========================
+	log.Println("Step 3: Generating tokens")
+
+	accessJTI := uuid.NewString()
+	refreshJTI := uuid.NewString()
+	deviceId := req.DeviceId
+
+	accessToken, err := security.GenerateAccessToken(
+		userID,
+		utils.RoleUser,
+		accessJTI,
+	)
+	if err != nil {
+		log.Printf("Access token error: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to generate access token",
+			"success": false,
+		})
+	}
+
+	refreshToken, err := security.GenerateRefreshToken(
+		userID,
+		utils.RoleUser,
+		refreshJTI,
+	)
+	if err != nil {
+		log.Printf("Refresh token error: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to generate refresh token",
+			"success": false,
+		})
+	}
+
+	log.Println("Step 4: Saving refresh session in Redis")
+
+	redisKey := fmt.Sprintf("refresh-token:%s:%s", userID, deviceId)
+
+	err = ac.RedisCache.Cache.Set(
+		ctx,
+		redisKey,
+		refreshJTI,
+		utils.RefreshTokenExpiry,
+	).Err()
+
+	if err != nil {
+		log.Printf("Redis error: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to store session",
+			"success": false,
+		})
+	}
+
+	log.Println("Login successful")
+
+	return c.Status(fiber.StatusOK).JSON(LoginResponse{
 		Message:      result.Message,
-		Success:      result.Success,
+		Success:      true,
 		User:         result.User,
-		AccessToken:  access_token,
-		RefrechToken: refresh_token,
-	}
-
-	return c.Status(fiber.StatusOK).JSON(response)
+		AccessToken:  accessToken,
+		RefrechToken: refreshToken,
+	})
 }
 
 func (ac *AuthController) ForgetPassword(c *fiber.Ctx) error {
@@ -338,8 +358,10 @@ func (ac *AuthController) CheckOTP(c *fiber.Ctx) error {
 				"success": false,
 			})
 		}
+		accessJTI := uuid.NewString()
+		refreshJTI := uuid.NewString()
 
-		accessToken, err := security.GenerateAccessToken(strconv.Itoa(userID), role)
+		accessToken, err := security.GenerateAccessToken(strconv.Itoa(userID), role, accessJTI)
 		if err != nil {
 			log.Printf("Failed to generate access token: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -348,7 +370,7 @@ func (ac *AuthController) CheckOTP(c *fiber.Ctx) error {
 			})
 		}
 
-		refreshToken, err := security.GenerateRefreshToken(strconv.Itoa(userID), role)
+		refreshToken, err := security.GenerateRefreshToken(strconv.Itoa(userID), role, refreshJTI)
 		if err != nil {
 			log.Printf("Failed to generate refresh token: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

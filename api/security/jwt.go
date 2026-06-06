@@ -8,12 +8,19 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-// Custom claims structure
+//
+// =====================
+// CONFIG
+// =====================
+//
+
 type CustomClaims struct {
 	UserID string `json:"user_id"`
 	Role   string `json:"role"`
+	JTI    string `json:"jti"`
 	jwt.RegisteredClaims
 }
 
@@ -25,20 +32,24 @@ func InitSecurity() *config.Config {
 	return cfg
 }
 
-// getAccessTokenSecret returns the access token secret from config
 func getAccessTokenSecret() []byte {
 	cfg := InitSecurity()
 	return []byte(cfg.ACCESS_TOKEN_SECRET)
 }
 
-// getRefreshTokenSecret returns the refresh token secret from config
 func getRefreshTokenSecret() []byte {
 	cfg := InitSecurity()
 	return []byte(cfg.REFRESH_TOKEN_SECRET)
 }
 
-// GenerateAccessToken creates a new JWT access token for a user
-func GenerateAccessToken(userID string, role string) (string, error) {
+//
+// =====================
+// GENERATE TOKENS
+// =====================
+//
+
+// Access Token
+func GenerateAccessToken(userID string, role string, accessJTI string) (string, error) {
 	if userID == "" {
 		return "", errors.New("user ID cannot be empty")
 	}
@@ -49,6 +60,7 @@ func GenerateAccessToken(userID string, role string) (string, error) {
 	claims := &CustomClaims{
 		UserID: userID,
 		Role:   role,
+		JTI:    accessJTI,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(utils.AccessTokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -62,8 +74,8 @@ func GenerateAccessToken(userID string, role string) (string, error) {
 	return token.SignedString(getAccessTokenSecret())
 }
 
-// GenerateRefreshToken creates a new JWT refresh token for a user
-func GenerateRefreshToken(userID string, role string) (string, error) {
+// Refresh Token
+func GenerateRefreshToken(userID string, role string, refreshJTI string) (string, error) {
 	if userID == "" {
 		return "", errors.New("user ID cannot be empty")
 	}
@@ -74,6 +86,7 @@ func GenerateRefreshToken(userID string, role string) (string, error) {
 	claims := &CustomClaims{
 		UserID: userID,
 		Role:   role,
+		JTI:    refreshJTI,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(utils.RefreshTokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -87,59 +100,20 @@ func GenerateRefreshToken(userID string, role string) (string, error) {
 	return token.SignedString(getRefreshTokenSecret())
 }
 
-// CheckToken validates and parses a JWT token (works for both access and refresh tokens)
-// Returns (isValid, userID, role, error)
-func CheckToken(tokenString string) (bool, string, string, error) {
+//
+// =====================
+// VALIDATION
+// =====================
+//
+
+// Validate Access Token
+func ValidateAccessToken(tokenString string) (string, string, string, *jwt.NumericDate, error) {
 	if tokenString == "" {
-		return false, "", "", errors.New("token cannot be empty")
-	}
-
-	// Try to parse with access token secret first
-	claims := &CustomClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		// Validate signing method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("unexpected signing method")
-		}
-		return getAccessTokenSecret(), nil
-	})
-
-	// If access token validation fails, try refresh token secret
-	if err != nil {
-		token, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("unexpected signing method")
-			}
-			return getRefreshTokenSecret(), nil
-		})
-
-		if err != nil {
-			return false, "", "", errors.New("invalid or expired token")
-		}
-	}
-
-	if !token.Valid {
-		return false, "", "", errors.New("invalid token")
-	}
-
-	// Validate required claims
-	if claims.UserID == "" {
-		return false, "", "", errors.New("user ID not found in token")
-	}
-	if claims.Role == "" {
-		return false, "", "", errors.New("user role not found in token")
-	}
-
-	return true, claims.UserID, claims.Role, nil
-}
-
-// ValidateAccessToken specifically validates an access token
-func ValidateAccessToken(tokenString string) (string, string, *jwt.NumericDate, error) {
-	if tokenString == "" {
-		return "", "", nil, errors.New("token cannot be empty")
+		return "", "", "", nil, errors.New("token cannot be empty")
 	}
 
 	claims := &CustomClaims{}
+
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -148,23 +122,24 @@ func ValidateAccessToken(tokenString string) (string, string, *jwt.NumericDate, 
 	})
 
 	if err != nil {
-		return "", "", nil, err
+		return "", "", "", nil, err
 	}
 
 	if !token.Valid {
-		return "", "", nil, errors.New("invalid token")
+		return "", "", "", nil, errors.New("invalid token")
 	}
 
-	return claims.UserID, claims.Role, claims.ExpiresAt, nil
+	return claims.UserID, claims.Role, claims.JTI, claims.ExpiresAt, nil
 }
 
-// ValidateRefreshToken specifically validates a refresh token
+// Validate Refresh Token
 func ValidateRefreshToken(tokenString string) (bool, *CustomClaims, error) {
 	if tokenString == "" {
 		return false, nil, errors.New("token cannot be empty")
 	}
 
 	claims := &CustomClaims{}
+
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
@@ -183,74 +158,102 @@ func ValidateRefreshToken(tokenString string) (bool, *CustomClaims, error) {
 	return true, claims, nil
 }
 
-// RefreshAccessToken generates a new access token using a valid refresh token
+//
+// =====================
+// REFRESH ACCESS TOKEN
+// =====================
+//
+
 func RefreshAccessToken(refreshTokenString string) (string, error) {
 	valid, claims, err := ValidateRefreshToken(refreshTokenString)
 	if err != nil || !valid {
 		return "", errors.New("invalid refresh token")
 	}
+	accessJTI := uuid.NewString()
 
-	// Generate new access token
-	return GenerateAccessToken(claims.UserID, claims.Role)
+	return GenerateAccessToken(claims.UserID, claims.Role, accessJTI)
 }
 
-// ExtractUserID extracts user ID from a token without full validation
-func ExtractUserID(tokenString string) (string, error) {
+//
+// =====================
+// GENERIC CHECK
+// =====================
+//
+
+func CheckToken(tokenString string) (bool, string, string, string, error) {
 	if tokenString == "" {
-		return "", errors.New("token cannot be empty")
+		return false, "", "", "", errors.New("token cannot be empty")
 	}
 
 	claims := &CustomClaims{}
 
-	// Try parsing without validation to extract claims
-	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
-	if err != nil {
-		return "", err
+	// Try access token first
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return getAccessTokenSecret(), nil
+	})
+
+	if err == nil && token.Valid {
+		return true, claims.UserID, claims.Role, claims.JTI, nil
 	}
 
-	if claims, ok := token.Claims.(*CustomClaims); ok {
-		if claims.UserID != "" {
-			return claims.UserID, nil
-		}
+	// Try refresh token
+	token, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return getRefreshTokenSecret(), nil
+	})
+
+	if err != nil || !token.Valid {
+		return false, "", "", "", errors.New("invalid token")
 	}
 
-	return "", errors.New("user ID not found in token")
+	return true, claims.UserID, claims.Role, claims.JTI, nil
 }
 
-// ExtractRole extracts user role from a token without full validation
-func ExtractRole(tokenString string) (string, error) {
-	if tokenString == "" {
-		return "", errors.New("token cannot be empty")
-	}
+//
+// =====================
+// HELPERS
+// =====================
+//
 
-	claims := &CustomClaims{}
-
-	token, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
-	if err != nil {
-		return "", err
-	}
-
-	if claims, ok := token.Claims.(*CustomClaims); ok {
-		if claims.Role != "" {
-			return claims.Role, nil
-		}
-	}
-
-	return "", errors.New("user role not found in token")
-}
-
-// Middleware helper to extract token from Authorization header
-// Expects header in format: "Bearer <token>"
 func ExtractTokenFromHeader(authHeader string) (string, error) {
 	if authHeader == "" {
 		return "", errors.New("authorization header is empty")
 	}
 
-	// Check if the header has the Bearer prefix
 	const bearerPrefix = "Bearer "
+
 	if len(authHeader) > len(bearerPrefix) && authHeader[:len(bearerPrefix)] == bearerPrefix {
 		return authHeader[len(bearerPrefix):], nil
 	}
 
 	return "", errors.New("invalid authorization header format")
+}
+
+func ExtractUserID(tokenString string) (string, error) {
+	claims := &CustomClaims{}
+
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
+	if err != nil {
+		return "", err
+	}
+
+	if claims.UserID == "" {
+		return "", errors.New("user ID not found")
+	}
+
+	return claims.UserID, nil
+}
+
+func ExtractRole(tokenString string) (string, error) {
+	claims := &CustomClaims{}
+
+	_, _, err := new(jwt.Parser).ParseUnverified(tokenString, claims)
+	if err != nil {
+		return "", err
+	}
+
+	if claims.Role == "" {
+		return "", errors.New("user role not found")
+	}
+
+	return claims.Role, nil
 }

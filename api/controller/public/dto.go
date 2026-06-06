@@ -14,6 +14,7 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
+	DeviceId string `json:"device_id" validate:"required"`
 }
 
 type ForgetPasswordRequest struct {
@@ -37,9 +38,9 @@ type SendOTPRequest struct {
 }
 
 type CheckOTPRequest struct {
-	Email       string `json:"email" validate:"required,email"`
-	OTP         string `json:"otp" validate:"required,len=6"`
-	Type        string `json:"type" validate:"required"`
+	Email string `json:"email" validate:"required,email"`
+	OTP   string `json:"otp" validate:"required,len=6"`
+	Type  string `json:"type" validate:"required"`
 }
 
 // Response structs
