@@ -42,12 +42,8 @@ func TestLogin(t *testing.T) {
 func TestCreateAccount(t *testing.T) {
 
 	ctx := context.Background()
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Failed to get current directory: %v", err)
-	}
-	fmt.Println(dir)
-	err = godotenv.Load(".env")
+
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Fatal("Error loading .env file:", err)
 	}

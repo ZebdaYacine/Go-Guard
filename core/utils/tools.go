@@ -6,10 +6,14 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"go-gaurd/core/config"
+	"go-gaurd/core/utils/mail"
+	"log"
 	"math/big"
 	"strings"
 
 	"github.com/go-sql-driver/mysql"
+	"gopkg.in/gomail.v2"
 )
 
 const (
@@ -96,4 +100,40 @@ func GenerateOTP() string {
 		panic(err)
 	}
 	return fmt.Sprintf("%06d", n.Int64()+100000)
+}
+
+func SendOTP(TO string, otp string) error {
+	configConfig, err := config.NewConfig()
+	if err != nil {
+		log.Println(err)
+	}
+	// dir, err := os.Getwd()
+	// if err != nil {
+	// 	log.Fatalf("Failed to get current directory: %v", err)
+	// }
+	body, err := mail.RenderTemplate(
+		"/home/zedyacine/Desktop/go-gaurd/Go-Guard/core/utils/mail/templates/otp_mailer.html",
+		mail.OTPData{
+			OTP:    otp,
+			Expiry: 10,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	log.Println(configConfig.FROM)
+
+	m := gomail.NewMessage()
+	m.SetHeader("From", configConfig.FROM)
+	m.SetHeader("To", TO)
+	m.SetHeader("Subject", "Your OTP Code")
+	m.SetBody("text/html", body)
+
+	d := gomail.NewDialer("smtp.gmail.com", 587, configConfig.SMTP_USER, configConfig.SMTP_PASS)
+	err = d.DialAndSend(m)
+	if err != nil {
+		log.Printf("Failed to send OTP: %v", err)
+	}
+	return err
 }

@@ -3,19 +3,15 @@ package public
 import (
 	"fmt"
 	"go-gaurd/api/security"
-	"go-gaurd/core/config"
 	"go-gaurd/core/utils"
-	"go-gaurd/core/utils/mail"
 	"go-gaurd/database"
 	"go-gaurd/feature/auth/usecase"
 	"log"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"gopkg.in/gomail.v2"
 )
 
 type AuthController struct {
@@ -29,8 +25,8 @@ type AuthControllerInterface interface {
 	Login(c *fiber.Ctx) error
 	ForgetPassword(c *fiber.Ctx) error
 	CheckOTP(c *fiber.Ctx) error
-	//TODO DOING THIS WORKFLOW
 	RestPassword(c *fiber.Ctx) error
+	//TODO DOING THIS WORKFLOW
 	RefreshAccessToken(c *fiber.Ctx) error
 }
 
@@ -41,38 +37,6 @@ func NewAuthController(authUsecase usecase.AuthUseCaseInterface, redisCache *dat
 		validate:    validator.New(),
 		RedisCache:  redisCache,
 	}
-}
-
-func (ac *AuthController) sendOTP(TO string, otp string) error {
-	configConfig, err := config.NewConfig()
-	if err != nil {
-		log.Println(err)
-	}
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Failed to get current directory: %v", err)
-	}
-	body, err := mail.RenderTemplate(
-		dir+"/core/utils/mail/templates/otp_mailer.html",
-		mail.OTPData{
-			OTP:    otp,
-			Expiry: 10,
-		},
-	)
-	if err != nil {
-		return err
-	}
-
-	log.Println(configConfig.FROM)
-
-	m := gomail.NewMessage()
-	m.SetHeader("From", configConfig.FROM)
-	m.SetHeader("To", TO)
-	m.SetHeader("Subject", "Your OTP Code")
-	m.SetBody("text/html", body)
-
-	d := gomail.NewDialer("smtp.gmail.com", 587, configConfig.SMTP_USER, configConfig.SMTP_PASS)
-	return d.DialAndSend(m)
 }
 
 func (ac *AuthController) validateBody(c *fiber.Ctx, req interface{}) error {
@@ -278,13 +242,11 @@ func (ac *AuthController) ForgetPassword(c *fiber.Ctx) error {
 
 	// Step 5: Send OTP via email
 	log.Println("Step 5: Sending OTP via email")
-	err = ac.sendOTP(req.Email, OTP)
+	err = utils.SendOTP(req.Email, OTP)
 	if err != nil {
 		log.Printf("Failed to send OTP email: %v", err)
-
 		// Rollback: Delete the OTP from Redis if email sending fails
 		ac.RedisCache.Cache.Del(ctx, redisKey)
-
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": "Failed to send OTP. Please try again later.",
 			"success": false,
