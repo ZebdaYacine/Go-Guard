@@ -26,8 +26,6 @@ type AuthControllerInterface interface {
 	ForgetPassword(c *fiber.Ctx) error
 	CheckOTP(c *fiber.Ctx) error
 	RestPassword(c *fiber.Ctx) error
-	//TODO DOING THIS WORKFLOW
-	RefreshAccessToken(c *fiber.Ctx) error
 }
 
 func NewAuthController(authUsecase usecase.AuthUseCaseInterface, redisCache *database.RedisCache) AuthControllerInterface {
@@ -179,6 +177,20 @@ func (ac *AuthController) Login(c *fiber.Ctx) error {
 		})
 	}
 	log.Println("Refresh Token generated successfully")
+
+	redisKey := fmt.Sprintf("refresh-token:%s", uuid)
+
+	ac.RedisCache.Cache.Del(ctx, redisKey)
+
+	// Store new OTP with 10 minutes expiration
+	err = ac.RedisCache.Cache.Set(ctx, redisKey, refresh_token, 10*time.Minute).Err()
+	if err != nil {
+		log.Printf("Failed to store OTP in Redis: %v", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": "Failed to process request. Please try again.",
+			"success": false,
+		})
+	}
 
 	log.Printf("Account logged in successfully for Email: %s", req.Email)
 	response := LoginResponse{
@@ -444,48 +456,5 @@ func (ac *AuthController) RestPassword(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"message": "Password reset successfully",
 		"success": true,
-	})
-}
-
-func (ac *AuthController) RefreshAccessToken(c *fiber.Ctx) error {
-	log.Println("========== REFRESH ACCESS TOKEN ENDPOINT STARTED ==========")
-
-	var req RefreshTokenRequest
-
-	// Step 1: Validate request body
-	log.Println("Step 1: Validating request body")
-	err := ac.validateBody(c, &req)
-	if err != nil {
-		log.Printf("Validation failed, returning error response: %v", err)
-		return err
-	}
-
-	// Step 2: Validate refresh token
-	log.Println("Step 2: Validating refresh token")
-	status, claims, err := security.ValidateRefreshToken(req.RefreshToken)
-	if err != nil || !status {
-		log.Printf("Invalid refresh token: %v", err)
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Invalid or expired refresh token",
-			"success": false,
-		})
-	}
-
-	// Step 3: Generate new access token
-	log.Println("Step 3: Generating new access token")
-	newAccessToken, err := security.GenerateAccessToken(claims.UserID, claims.Role)
-	if err != nil {
-		log.Printf("Failed to generate new access token: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Error generating new access token",
-			"success": false,
-		})
-	}
-
-	log.Printf("New access token generated successfully for user: %s", claims.UserID)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":      "Access token refreshed successfully",
-		"success":      true,
-		"access_token": newAccessToken,
 	})
 }

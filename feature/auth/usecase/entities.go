@@ -5,7 +5,7 @@ type User_Entity struct {
 	Email     string `validate:"required,email"`
 	Phone     string `validate:"required,len=10"`
 	Password  string `validate:"required,min=8"`
-	Role      string `validate:"required,oneof=guest client artisant admin"`
+	Role      string `validate:"required,oneof=guest client artisant admin user"`
 	Sex       string `validate:"required,oneof=male female"`
 	Picture   string `validate:"omitempty,url"`
 }

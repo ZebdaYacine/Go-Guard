@@ -45,8 +45,8 @@ func AuthenticatorMiddleware(e *casbin.Enforcer, redisCache *database.RedisCache
 		}
 
 		// Validate token
-		valid, userID, role, err := ValidateAccessToken(token)
-		if err != nil || !valid {
+		userID, role, _, err := ValidateAccessToken(token)
+		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error":   "Invalid or expired token",
 				"message": err.Error(),

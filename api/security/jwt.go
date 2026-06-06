@@ -3,6 +3,7 @@ package security
 import (
 	"errors"
 	"go-gaurd/core/config"
+	"go-gaurd/core/utils"
 	"log"
 	"time"
 
@@ -36,18 +37,6 @@ func getRefreshTokenSecret() []byte {
 	return []byte(cfg.REFRESH_TOKEN_SECRET)
 }
 
-// TokenExpiry defines token expiration durations
-var (
-	accessTokenExpiry  = 15 * time.Minute
-	refreshTokenExpiry = 7 * 24 * time.Hour // 7 days
-)
-
-// SetTokenExpiry allows customizing token expiration times
-func SetTokenExpiry(accessExpiry, refreshExpiry time.Duration) {
-	accessTokenExpiry = accessExpiry
-	refreshTokenExpiry = refreshExpiry
-}
-
 // GenerateAccessToken creates a new JWT access token for a user
 func GenerateAccessToken(userID string, role string) (string, error) {
 	if userID == "" {
@@ -61,10 +50,10 @@ func GenerateAccessToken(userID string, role string) (string, error) {
 		UserID: userID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(accessTokenExpiry)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(utils.AccessTokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "your-app-name",
+			Issuer:    "go-gaurd",
 			Subject:   userID,
 		},
 	}
@@ -86,10 +75,10 @@ func GenerateRefreshToken(userID string, role string) (string, error) {
 		UserID: userID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(refreshTokenExpiry)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(utils.RefreshTokenExpiry)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
-			Issuer:    "your-app-name",
+			Issuer:    "go-gaurd",
 			Subject:   userID,
 		},
 	}
@@ -145,9 +134,9 @@ func CheckToken(tokenString string) (bool, string, string, error) {
 }
 
 // ValidateAccessToken specifically validates an access token
-func ValidateAccessToken(tokenString string) (bool, string, string, error) {
+func ValidateAccessToken(tokenString string) (string, string, *jwt.NumericDate, error) {
 	if tokenString == "" {
-		return false, "", "", errors.New("token cannot be empty")
+		return "", "", nil, errors.New("token cannot be empty")
 	}
 
 	claims := &CustomClaims{}
@@ -159,14 +148,14 @@ func ValidateAccessToken(tokenString string) (bool, string, string, error) {
 	})
 
 	if err != nil {
-		return false, "", "", err
+		return "", "", nil, err
 	}
 
 	if !token.Valid {
-		return false, "", "", errors.New("invalid token")
+		return "", "", nil, errors.New("invalid token")
 	}
 
-	return true, claims.UserID, claims.Role, nil
+	return claims.UserID, claims.Role, claims.ExpiresAt, nil
 }
 
 // ValidateRefreshToken specifically validates a refresh token

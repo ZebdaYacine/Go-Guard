@@ -6,22 +6,19 @@ p, guest, /api/auth/register, POST
 p, guest, /api/auth/login, POST
 p, guest, /api/auth/recovery/forget-password, POST
 p, guest, /api/auth/recovery/check-otp, POST
-p, guest, /api/auth/recovery/rest-password, PUT
+p, guest, /api/auth/recovery/reset-password, PUT
 
 # USER
 p, user, /api/user/profile, GET
-p, user, /api/user/*, GET
-p, user, /api/user/*, POST
-p, user, /api/user/*, PUT
-p, user, /api/user/*, DELETE
+
+p, user, /api/user/update-profile, PUT
+p, user, /api/user/update-profile-picture, PUT
+p, user, /api/user/update-password, PUT
+
+p, user, /api/user/refresh-token, POST
+p, user, /api/user/logout, POST
 
 
-# Admin has full access to user endpoints
-p, admin, /api/user/profile, GET
-p, admin, /api/user/*, GET
-p, admin, /api/user/*, POST
-p, admin, /api/user/*, PUT
-p, admin, /api/user/*, DELETE
 
 # Admin has full access to admin endpoints  
 p, admin, /api/admin/*, GET
