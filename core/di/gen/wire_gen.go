@@ -38,15 +38,15 @@ func InitializeAll() (*AppDependencies, error) {
 	authRepositoryInterface := domain.NewAuthRepository(databaseDatabase)
 	authUseCaseInterface := usecase.NewAuthUseCase(authRepositoryInterface)
 	authControllerInterface := public.NewAuthController(authUseCaseInterface, redisCache)
-	profileRepository := domain2.NewProfileRepository(databaseDatabase)
-	profileUseCase := usecase2.NewProfileUseCase(profileRepository)
-	profileController := private.NewProfileController(profileUseCase, redisCache)
+	profileRepositoryInterface := domain2.NewProfileRepository(databaseDatabase)
+	profileUseCaseInterface := usecase2.NewProfileUseCase(profileRepositoryInterface)
+	profileControllerInterface := private.NewProfileController(profileUseCaseInterface, redisCache)
 	appDependencies := &AppDependencies{
 		Config:            configConfig,
 		Redis:             redisCache,
 		Database:          databaseDatabase,
 		AuthController:    authControllerInterface,
-		ProfileController: profileController,
+		ProfileController: profileControllerInterface,
 	}
 	return appDependencies, nil
 }
@@ -65,5 +65,5 @@ type AppDependencies struct {
 	Redis             *database.RedisCache
 	Database          *database.Database
 	AuthController    public.AuthControllerInterface
-	ProfileController *private.ProfileController
+	ProfileController private.ProfileControllerInterface
 }

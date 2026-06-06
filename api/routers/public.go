@@ -9,27 +9,39 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupPublicRoutes(app *fiber.App, authController public.AuthControllerInterface, redisCache *database.RedisCache) {
+func SetupPublicRoutes(
+	app *fiber.App,
+	authController public.AuthControllerInterface,
+	redisCache *database.RedisCache,
+) {
 
-	app.Use(security.DetectClientIP(redisCache))
-	app.Use(security.RateLimitPerGuest(redisCache, 20, 1*time.Minute))
+	detectIP := security.DetectClientIP(redisCache)
+
+	// Health
 	app.Get("/health", public.HealthCheck)
 	app.Get("/ready", public.ReadinessCheck)
 
-	// API guest group (fixed typo: "geust" -> "guest")
-	guest := app.Group("/api/guest") // Fixed spelling
-	guest.Use(security.DetectClientIP(redisCache))
-	guest.Use(security.RateLimitPerGuest(redisCache, 20, 1*time.Minute))
-	guest.Get("/public/info", public.PublicInfo)
+	// 20 requests/minute
+	publicGroup := app.Group("/api/public")
+	publicGroup.Use(detectIP)
+	publicGroup.Use(security.RateLimitPerGuest(redisCache, 20, time.Minute))
 
-	// API auth group
-	auth := app.Group("/api/auth")
-	auth.Use(security.DetectClientIP(redisCache))
-	auth.Use(security.RateLimitPerGuest(redisCache, 10, 1*time.Minute))
-	auth.Post("/register", authController.Register)
-	auth.Post("/login", authController.Login)
-	auth.Post("/forget-password", authController.ForgetPassword)
-	auth.Get("/check-otp", authController.CheckOTP)
-	auth.Put("/rest-password", authController.RestPassword)
+	publicGroup.Get("/info", public.PublicInfo)
 
+	// 10 requests/minute
+	authGroup := app.Group("/api/auth")
+	authGroup.Use(detectIP)
+	authGroup.Use(security.RateLimitPerGuest(redisCache, 10, time.Minute))
+
+	authGroup.Post("/register", authController.Register)
+	authGroup.Post("/login", authController.Login)
+
+	// 3 requests/minute (sensitive operations)
+	recoveryGroup := app.Group("/api/auth/recovery")
+	recoveryGroup.Use(detectIP)
+	recoveryGroup.Use(security.RateLimitPerGuest(redisCache, 3, time.Minute))
+
+	recoveryGroup.Post("/forget-password", authController.ForgetPassword)
+	recoveryGroup.Post("/check-otp", authController.CheckOTP)
+	recoveryGroup.Put("/reset-password", authController.RestPassword)
 }

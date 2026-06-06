@@ -43,5 +43,5 @@ type AppDependencies struct {
 	Redis             *database.RedisCache
 	Database          *database.Database
 	AuthController    public.AuthControllerInterface
-	ProfileController *private.ProfileController
+	ProfileController private.ProfileControllerInterface
 }

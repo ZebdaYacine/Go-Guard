@@ -14,32 +14,56 @@ func init() {
 }
 
 type ProfileUseCase struct {
-	repo *domain.ProfileRepository // Change to pointer to struct
+	repo domain.ProfileRepositoryInterface // Change to pointer to struct
 }
 
 type ProfileUseCaseInterface interface {
-	GetAccount(ctx context.Context, query Query) Result
-	UpdateAccount(ctx context.Context, query Query) Result
-	ActiveAccount(ctx context.Context, query Query) Result
+	GetProfile(ctx context.Context, query Query) Result
+	UpdateProfile(ctx context.Context, query Query) Result
+	UpdateProfilePicture(ctx context.Context, query Query) Result
+	UpdatePassword(ctx context.Context, query Query) Result
+	ActiveProfile(ctx context.Context, query Query) Result
+	Logout(ctx context.Context, query Query) Result
+	RefreshAccessToken(ctx context.Context, query Query) Result
 }
 
-func NewProfileUseCase(repo *domain.ProfileRepository) *ProfileUseCase {
+func NewProfileUseCase(repo domain.ProfileRepositoryInterface) ProfileUseCaseInterface {
 	return &ProfileUseCase{
 		repo: repo,
 	}
 }
 
-// ActiveAccount implements [ProfileUseCaseInterface].
-func (p *ProfileUseCase) ActiveAccount(ctx context.Context, query Query) Result {
+// ActiveProfile implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) ActiveProfile(ctx context.Context, query Query) Result {
 	panic("unimplemented")
 }
 
-// GetAccount implements [ProfileUseCaseInterface].
-func (p *ProfileUseCase) GetAccount(ctx context.Context, query Query) Result {
+// GetProfile implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) GetProfile(ctx context.Context, query Query) Result {
 	panic("unimplemented")
 }
 
-// UpdateAccount implements [ProfileUseCaseInterface].
-func (p *ProfileUseCase) UpdateAccount(ctx context.Context, query Query) Result {
+// Logout implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) Logout(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// RefreshAccessToken implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) RefreshAccessToken(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// UpdatePassword implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) UpdatePassword(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// UpdateProfile implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) UpdateProfile(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// UpdateProfilePicture implements [ProfileUseCaseInterface].
+func (p *ProfileUseCase) UpdateProfilePicture(ctx context.Context, query Query) Result {
 	panic("unimplemented")
 }

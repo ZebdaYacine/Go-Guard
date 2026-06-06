@@ -47,6 +47,6 @@ func SetupRoutes(app *fiber.App) {
 	app.Use(security.AuthoriserMiddleware(e))
 
 	SetupPublicRoutes(app, authController, redis)
-	SetupPrivateRoutes(app, profileController)
+	SetupPrivateRoutes(app, profileController, redis)
 	SetupAdminRouter(app, authController, profileController)
 }

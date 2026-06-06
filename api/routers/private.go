@@ -1,32 +1,23 @@
 package routers
 
 import (
-	"fmt"
 	"go-gaurd/api/controller/private"
 	"go-gaurd/api/security"
+	"go-gaurd/database"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func SetupPrivateRoutes(app *fiber.App, profileController *private.ProfileController) {
-
+func SetupPrivateRoutes(app *fiber.App, profileController private.ProfileControllerInterface, redis *database.RedisCache) {
+	//TODO TAKE 2 DAYS FOR THIS WORKFLOW
 	user := app.Group("/api/user")
-	user.Use(security.DetectClientIP(profileController.RedisCache))
-	app.Use(security.RateLimitPerUser(profileController.RedisCache, 10, 1*time.Minute))
-	user.Get("/profile", func(c *fiber.Ctx) error {
-		fmt.Println("YOU ARE INSIDE PROFILE ENDPOINT")
+	user.Use(security.DetectClientIP(redis))
+	profileLimiter := security.RateLimitPerUser(redis, 10, time.Minute)
+	updateLimiter := security.RateLimitPerUser(redis, 5, time.Minute)
+	authLimiter := security.RateLimitPerUser(redis, 1, time.Minute)
 
-		// Get user info from context (set by AuthMiddleware)
-		userID := c.Locals("userID")
-		role := c.Locals("role")
-
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"status":  "ready",
-			"message": "Profile endpoint",
-			"user_id": userID,
-			"role":    role,
-		})
-	})
-
+	user.Get("/profile", profileLimiter, profileController.GetProfile)
+	user.Put("/update-profile", updateLimiter, profileController.UpdateProfile)
+	user.Post("/refresh-token", authLimiter, profileController.RefreshAccessToken)
 }

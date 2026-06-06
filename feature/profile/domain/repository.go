@@ -11,26 +11,50 @@ type ProfileRepository struct {
 }
 
 type ProfileRepositoryInterface interface {
-	GetAccount(ctx context.Context, query Query) Result
-	UpdateAccount(ctx context.Context, query Query) Result
-	ActiveAccount(ctx context.Context, query Query) Result
+	GetProfile(ctx context.Context, query Query) Result
+	UpdateProfile(ctx context.Context, query Query) Result
+	UpdateProfilePicture(ctx context.Context, query Query) Result
+	UpdatePassword(ctx context.Context, query Query) Result
+	ActiveProfile(ctx context.Context, query Query) Result
+	Logout(ctx context.Context, query Query) Result
+	RefreshAccessToken(ctx context.Context, query Query) Result
 }
 
-func NewProfileRepository(db *database.Database) *ProfileRepository {
+func NewProfileRepository(db *database.Database) ProfileRepositoryInterface {
 	return &ProfileRepository{DB: db.DB}
 }
 
-// ActiveAccount implements [ProfileRepositoryInterface].
-func (p *ProfileRepository) ActiveAccount(ctx context.Context, query Query) Result {
+// ActiveProfile implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) ActiveProfile(ctx context.Context, query Query) Result {
 	panic("unimplemented")
 }
 
-// GetAccount implements [ProfileRepositoryInterface].
-func (p *ProfileRepository) GetAccount(ctx context.Context, query Query) Result {
+// GetProfile implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) GetProfile(ctx context.Context, query Query) Result {
 	panic("unimplemented")
 }
 
-// UpdateAccount implements [ProfileRepositoryInterface].
-func (p *ProfileRepository) UpdateAccount(ctx context.Context, query Query) Result {
+// Logout implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) Logout(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// RefreshAccessToken implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) RefreshAccessToken(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// UpdatePassword implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) UpdatePassword(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// UpdateProfile implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) UpdateProfile(ctx context.Context, query Query) Result {
+	panic("unimplemented")
+}
+
+// UpdateProfilePicture implements [ProfileRepositoryInterface].
+func (p *ProfileRepository) UpdateProfilePicture(ctx context.Context, query Query) Result {
 	panic("unimplemented")
 }

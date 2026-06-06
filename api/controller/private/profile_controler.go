@@ -10,18 +10,22 @@ import (
 )
 
 type ProfileController struct {
-	ProfileUsecase *usecase.ProfileUseCase
+	ProfileUsecase usecase.ProfileUseCaseInterface
 	validate       *validator.Validate
 	RedisCache     *database.RedisCache
 }
 
 type ProfileControllerInterface interface {
-	GetAccount(c *fiber.Ctx) error
-	UpdateAccount(c *fiber.Ctx) error
-	ActiveAccount(c *fiber.Ctx) error
+	GetProfile(c *fiber.Ctx) error
+	UpdateProfile(c *fiber.Ctx) error
+	UpdateProfilePicture(c *fiber.Ctx) error
+	UpdatePassword(c *fiber.Ctx) error
+	ActiveProfile(c *fiber.Ctx) error
+	RefreshAccessToken(c *fiber.Ctx) error
+	Logout(c *fiber.Ctx) error
 }
 
-func NewProfileController(profileUsecase *usecase.ProfileUseCase, redisCache *database.RedisCache) *ProfileController {
+func NewProfileController(profileUsecase usecase.ProfileUseCaseInterface, redisCache *database.RedisCache) ProfileControllerInterface {
 	log.Println("Initializing new ProfileController")
 	return &ProfileController{
 		ProfileUsecase: profileUsecase,
@@ -30,17 +34,37 @@ func NewProfileController(profileUsecase *usecase.ProfileUseCase, redisCache *da
 	}
 }
 
-// ActiveAccount implements [ProfileControllerInterface].
-func (p *ProfileController) ActiveAccount(c *fiber.Ctx) error {
+// ActiveProfile implements [ProfileControllerInterface].
+func (p *ProfileController) ActiveProfile(c *fiber.Ctx) error {
 	panic("unimplemented")
 }
 
-// GetAccount implements [ProfileControllerInterface].
-func (p *ProfileController) GetAccount(c *fiber.Ctx) error {
+// GetProfile implements [ProfileControllerInterface].
+func (p *ProfileController) GetProfile(c *fiber.Ctx) error {
 	panic("unimplemented")
 }
 
-// UpdateAccount implements [ProfileControllerInterface].
-func (p *ProfileController) UpdateAccount(c *fiber.Ctx) error {
+// Logout implements [ProfileControllerInterface].
+func (p *ProfileController) Logout(c *fiber.Ctx) error {
+	panic("unimplemented")
+}
+
+// RefreshAccessToken implements [ProfileControllerInterface].
+func (p *ProfileController) RefreshAccessToken(c *fiber.Ctx) error {
+	panic("unimplemented")
+}
+
+// UpdateProfile implements [ProfileControllerInterface].
+func (p *ProfileController) UpdateProfile(c *fiber.Ctx) error {
+	panic("unimplemented")
+}
+
+// UpdateProfilePicture implements [ProfileControllerInterface].
+func (p *ProfileController) UpdateProfilePicture(c *fiber.Ctx) error {
+	panic("unimplemented")
+}
+
+// UpdatePassword implements [ProfileControllerInterface].
+func (p *ProfileController) UpdatePassword(c *fiber.Ctx) error {
 	panic("unimplemented")
 }

@@ -4,9 +4,9 @@ p, guest, /ready, GET
 p, guest, /api/guest/public/info, GET
 p, guest, /api/auth/register, POST
 p, guest, /api/auth/login, POST
-p, guest, /api/auth/forget-password, POST
-p, guest, /api/auth/check-otp, GET
-p, guest, /api/auth/rest-password, PUT
+p, guest, /api/auth/recovery/forget-password, POST
+p, guest, /api/auth/recovery/check-otp, POST
+p, guest, /api/auth/recovery/rest-password, PUT
 
 # USER
 p, user, /api/user/profile, GET
