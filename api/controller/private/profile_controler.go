@@ -173,13 +173,13 @@ func (p *ProfileController) LogoutAllDevices(c *fiber.Ctx) error {
 			continue
 		}
 
-		_ = p.RedisCache.Cache.Set(
-			ctx,
-			"blacklist:access:"+parts[2],
-			"revoked",
-			utils.AccessTokenExpiry,
-		)
 		if logoutRequest.DeviceId != parts[2] {
+			_ = p.RedisCache.Cache.Set(
+				ctx,
+				"blacklist:access:"+userID,
+				"revoked",
+				utils.AccessTokenExpiry,
+			)
 			err := p.RedisCache.Cache.Del(ctx, key).Err()
 			if err != nil {
 				log.Printf("Failed to delete %s: %v", key, err)
@@ -270,24 +270,44 @@ func (ac *ProfileController) RefreshAccessToken(c *fiber.Ctx) error {
 			"success": false,
 		})
 	}
-	accessJTI := uuid.NewString()
-	// Step 3: Generate new access token
-	log.Println("Step 3: Generating new access token")
-	newAccessToken, err := security.GenerateAccessToken(claims.UserID, claims.Role, accessJTI)
-	if err != nil {
-		log.Printf("Failed to generate new access token: %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Error generating new access token",
-			"success": false,
+
+	ac.validateBody(c, &req)
+	r := claims
+
+	fmt.Println(r)
+
+	refreshKey := fmt.Sprintf("refresh-token:%s:%s", claims.UserID, req.DeviceId)
+	refreshTokenID, err := ac.RedisCache.Cache.Get(c.Context(), refreshKey).Result()
+	fmt.Println("RefreshTokenID ==> claims.JTI", refreshTokenID, claims.JTI)
+
+	if refreshTokenID == r.ID {
+		fmt.Println("RefreshJti ==>", refreshTokenID)
+		accessJTI := uuid.NewString()
+		// Step 3: Generate new access token
+		log.Println("Step 3: Generating new access token")
+		newAccessToken, err := security.GenerateAccessToken(claims.UserID, claims.Role, accessJTI)
+		if err != nil {
+			log.Printf("Failed to generate new access token: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Error generating new access token",
+				"success": false,
+			})
+		}
+
+		log.Printf("New access token generated successfully for user: %s", claims.UserID)
+
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message":      "Access token refreshed successfully",
+			"success":      true,
+			"access_token": newAccessToken,
 		})
 	}
 
-	log.Printf("New access token generated successfully for user: %s", claims.UserID)
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":      "Access token refreshed successfully",
-		"success":      true,
-		"access_token": newAccessToken,
+	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+		"message": "Invalid refresh token",
+		"success": false,
 	})
+
 }
 
 // UpdateProfile implements [ProfileControllerInterface].

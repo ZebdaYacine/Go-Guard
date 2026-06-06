@@ -28,4 +28,5 @@ func SetupPrivateRoutes(app *fiber.App, profileController private.ProfileControl
 	user.Post("/refresh-token", authLimiter, profileController.RefreshAccessToken)
 	user.Post("/logout", authLimiter, profileController.Logout)
 	user.Post("/logout-all-devices", authLimiter, profileController.LogoutAllDevices)
+	user.Post("/refresh-token", authLimiter, profileController.RefreshAccessToken)
 }

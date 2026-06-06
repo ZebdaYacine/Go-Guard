@@ -18,6 +18,7 @@ p, user, /api/user/update-password, PUT
 p, user, /api/user/refresh-token, POST
 p, user, /api/user/logout, POST
 p, user, /api/user/logout-all-devices, POST
+p, user, /api/user/refresh-token, POST
 
 
 
