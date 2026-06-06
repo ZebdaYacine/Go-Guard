@@ -10,6 +10,7 @@ p, guest, /api/auth/recovery/reset-password, PUT
 
 # USER
 p, user, /api/user/profile, GET
+p, user, /api/user/activate-profile, POST
 
 p, user, /api/user/update-profile, PUT
 p, user, /api/user/update-profile-picture, PUT

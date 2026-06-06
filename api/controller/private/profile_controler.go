@@ -62,13 +62,14 @@ type ProfileController struct {
 
 type ProfileControllerInterface interface {
 	GetProfile(c *fiber.Ctx) error
-	UpdateProfile(c *fiber.Ctx) error
-	UpdateProfilePicture(c *fiber.Ctx) error
-	UpdatePassword(c *fiber.Ctx) error
 	ActiveProfile(c *fiber.Ctx) error
 	RefreshAccessToken(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	LogoutAllDevices(c *fiber.Ctx) error
+
+	UpdateProfile(c *fiber.Ctx) error
+	UpdateProfilePicture(c *fiber.Ctx) error
+	UpdatePassword(c *fiber.Ctx) error
 }
 
 func NewProfileController(profileUsecase usecase.ProfileUseCaseInterface, redisCache *database.RedisCache) ProfileControllerInterface {
