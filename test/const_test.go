@@ -28,3 +28,11 @@ func TestSendOTP(t *testing.T) {
 		t.Error("Expected successful OTP sending, got error", r.Error())
 	}
 }
+
+func TestHashPasswordSHA256(t *testing.T) {
+	hash := utils.HashPasswordSHA256("Lyna2311")
+	if hash == "" {
+		t.Error("Expected a valid hash, got empty string")
+	}
+	fmt.Println(hash)
+}
