@@ -12,52 +12,14 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
-
-func (ac *ProfileController) validateBody(c *fiber.Ctx, req interface{}) error {
-	log.Println("Validating request body")
-
-	if err := c.BodyParser(req); err != nil {
-		log.Printf("Body parsing failed: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": "Invalid request body",
-			"success": false,
-		})
-	}
-
-	if err := ac.validate.Struct(req); err != nil {
-		log.Printf("Validation failed: %v", err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
-			"success": false,
-		})
-	}
-
-	log.Println("Request body validation successful")
-	return nil
-}
-
-func (ac *ProfileController) getClaimFromToken(c *fiber.Ctx) (string, string, string, *jwt.NumericDate, error) {
-	authHeader := c.Get("Authorization")
-	token, err := security.ExtractTokenFromHeader(authHeader)
-	if err != nil {
-		log.Printf("Failed to extract token: %v", err)
-		return "", "", "", nil, err
-	}
-	userId, role, jti, expiresAt, err := security.ValidateAccessToken(token)
-	if err != nil {
-		log.Printf("Failed to validate access token: %v", err)
-		return "", "", "", nil, err
-	}
-	return userId, role, jti, expiresAt, nil
-}
 
 type ProfileController struct {
 	ProfileUsecase usecase.ProfileUseCaseInterface
 	validate       *validator.Validate
 	RedisCache     *database.RedisCache
+	MinioDB        *database.MinioClient
 }
 
 type ProfileControllerInterface interface {
@@ -66,24 +28,24 @@ type ProfileControllerInterface interface {
 	RefreshAccessToken(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	LogoutAllDevices(c *fiber.Ctx) error
-
 	UpdateProfile(c *fiber.Ctx) error
 	UpdateProfilePicture(c *fiber.Ctx) error
 	UpdatePassword(c *fiber.Ctx) error
 }
 
-func NewProfileController(profileUsecase usecase.ProfileUseCaseInterface, redisCache *database.RedisCache) ProfileControllerInterface {
+func NewProfileController(profileUsecase usecase.ProfileUseCaseInterface, redisCache *database.RedisCache, minioDB *database.MinioClient) ProfileControllerInterface {
 	log.Println("Initializing new ProfileController")
 	return &ProfileController{
 		ProfileUsecase: profileUsecase,
 		validate:       validator.New(),
 		RedisCache:     redisCache,
+		MinioDB:        minioDB,
 	}
 }
 
 // GetProfile implements [ProfileControllerInterface].
 func (p *ProfileController) GetProfile(c *fiber.Ctx) error {
-	userId, _, jti, _, err := p.getClaimFromToken(c)
+	userId, _, jti, _, err := p.GetClaimFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Unauthorized",
@@ -121,7 +83,7 @@ func (p *ProfileController) GetProfile(c *fiber.Ctx) error {
 
 // ActiveProfile implements [ProfileControllerInterface].
 func (p *ProfileController) ActiveProfile(c *fiber.Ctx) error {
-	userId, _, _, _, err := p.getClaimFromToken(c)
+	userId, _, _, _, err := p.GetClaimFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Unauthorized",
@@ -149,9 +111,9 @@ func (p *ProfileController) LogoutAllDevices(c *fiber.Ctx) error {
 	log.Println("========== LOGOUT ALL DEVICES ==========")
 
 	var logoutRequest LogoutRequest
-	p.validateBody(c, &logoutRequest)
+	p.ValidateBody(c, &logoutRequest)
 
-	userID, _, _, _, err := p.getClaimFromToken(c)
+	userID, _, _, _, err := p.GetClaimFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Unauthorized",
@@ -202,7 +164,7 @@ func (p *ProfileController) LogoutAllDevices(c *fiber.Ctx) error {
 // Logout implements [ProfileControllerInterface].
 func (p *ProfileController) Logout(c *fiber.Ctx) error {
 
-	userId, _, jti, expiresAt, err := p.getClaimFromToken(c)
+	userId, _, jti, expiresAt, err := p.GetClaimFromToken(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"message": "Unauthorized",
@@ -211,7 +173,7 @@ func (p *ProfileController) Logout(c *fiber.Ctx) error {
 	}
 
 	var logoutRequest LogoutRequest
-	p.validateBody(c, &logoutRequest)
+	p.ValidateBody(c, &logoutRequest)
 
 	ctx := c.Context()
 
@@ -255,7 +217,7 @@ func (ac *ProfileController) RefreshAccessToken(c *fiber.Ctx) error {
 
 	// Step 1: Validate request body
 	log.Println("Step 1: Validating request body")
-	err := ac.validateBody(c, &req)
+	err := ac.ValidateBody(c, &req)
 	if err != nil {
 		log.Printf("Validation failed, returning error response: %v", err)
 		return err
@@ -272,7 +234,7 @@ func (ac *ProfileController) RefreshAccessToken(c *fiber.Ctx) error {
 		})
 	}
 
-	ac.validateBody(c, &req)
+	ac.ValidateBody(c, &req)
 	r := claims
 
 	fmt.Println(r)
@@ -313,12 +275,41 @@ func (ac *ProfileController) RefreshAccessToken(c *fiber.Ctx) error {
 
 // UpdateProfile implements [ProfileControllerInterface].
 func (p *ProfileController) UpdateProfile(c *fiber.Ctx) error {
-	panic("unimplemented")
+
+	var profileUpdateRequest UpdateProfileRequest
+	p.ValidateBody(c, &profileUpdateRequest)
+
+	query := usecase.Query{}
+	ctx := c.Context()
+
+	result := p.ProfileUsecase.UpdateProfile(ctx, query)
+	if !result.Success {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Failed to update profile",
+			"success": false,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": "Profile updated successfully",
+		"success": true,
+	})
 }
 
 // UpdateProfilePicture implements [ProfileControllerInterface].
 func (p *ProfileController) UpdateProfilePicture(c *fiber.Ctx) error {
-	panic("unimplemented")
+	ctx := c.Context()
+	_, url := p.UploadFile(c)
+	result := p.ProfileUsecase.UpdateProfilePicture(ctx, url, "")
+	if !result.Success {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"message": "Failed to update profile",
+			"success": false,
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"message": fmt.Sprintf("Profile updated successfully %s", url),
+		"success": true,
+	})
 }
 
 // UpdatePassword implements [ProfileControllerInterface].

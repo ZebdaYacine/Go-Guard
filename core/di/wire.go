@@ -20,7 +20,8 @@ var (
 	ConfigSet   = wire.NewSet(config.NewConfig)
 	DatabaseSet = wire.NewSet(database.NewDatabase)
 	RedisSet    = wire.NewSet(database.NewRedisCache)
-	CoreSet     = wire.NewSet(ConfigSet, DatabaseSet, RedisSet)
+	MinioSet    = wire.NewSet(database.NewMinioClient)
+	CoreSet     = wire.NewSet(ConfigSet, DatabaseSet, RedisSet, MinioSet)
 )
 
 // InitializeAll creates all dependencies once and returns them
@@ -42,6 +43,7 @@ type AppDependencies struct {
 	Config            *config.Config
 	Redis             *database.RedisCache
 	Database          *database.Database
+	Minio             *database.MinioClient
 	AuthController    public.AuthControllerInterface
 	ProfileController private.ProfileControllerInterface
 }

@@ -1,5 +1,13 @@
 package private
 
+import "mime/multipart"
+
+type UpdateProfileRequest struct {
+	UserName string                `form:"user_name" validate:"required,min=3,max=50"`
+	Email    string                `form:"email" validate:"required,email"`
+	Phone    string                `form:"phone" validate:"required"`
+	Picture  *multipart.FileHeader `form:"picture" validate:"omitempty"`
+}
 type ForgetPasswordRequest struct {
 	Email string `json:"email" validate:"required,email"`
 }

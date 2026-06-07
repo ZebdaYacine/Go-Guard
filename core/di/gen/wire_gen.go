@@ -35,16 +35,21 @@ func InitializeAll() (*AppDependencies, error) {
 	if err != nil {
 		return nil, err
 	}
+	minioClient, err := database.NewMinioClient(configConfig)
+	if err != nil {
+		return nil, err
+	}
 	authRepositoryInterface := domain.NewAuthRepository(databaseDatabase)
 	authUseCaseInterface := usecase.NewAuthUseCase(authRepositoryInterface)
 	authControllerInterface := public.NewAuthController(authUseCaseInterface, redisCache)
 	profileRepositoryInterface := domain2.NewProfileRepository(databaseDatabase)
 	profileUseCaseInterface := usecase2.NewProfileUseCase(profileRepositoryInterface)
-	profileControllerInterface := private.NewProfileController(profileUseCaseInterface, redisCache)
+	profileControllerInterface := private.NewProfileController(profileUseCaseInterface, redisCache, minioClient)
 	appDependencies := &AppDependencies{
 		Config:            configConfig,
 		Redis:             redisCache,
 		Database:          databaseDatabase,
+		Minio:             minioClient,
 		AuthController:    authControllerInterface,
 		ProfileController: profileControllerInterface,
 	}
@@ -57,13 +62,15 @@ var (
 	ConfigSet   = wire.NewSet(config.NewConfig)
 	DatabaseSet = wire.NewSet(database.NewDatabase)
 	RedisSet    = wire.NewSet(database.NewRedisCache)
-	CoreSet     = wire.NewSet(ConfigSet, DatabaseSet, RedisSet)
+	MinioSet    = wire.NewSet(database.NewMinioClient)
+	CoreSet     = wire.NewSet(ConfigSet, DatabaseSet, RedisSet, MinioSet)
 )
 
 type AppDependencies struct {
 	Config            *config.Config
 	Redis             *database.RedisCache
 	Database          *database.Database
+	Minio             *database.MinioClient
 	AuthController    public.AuthControllerInterface
 	ProfileController private.ProfileControllerInterface
 }

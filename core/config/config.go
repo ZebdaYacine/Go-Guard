@@ -19,6 +19,11 @@ type Config struct {
 	FROM                 string
 	SMTP_PASS            string
 	SMTP_USER            string
+	MINIO_ENDPOINT       string
+	MINIO_ACCESS_KEY     string
+	MINIO_SECRET_KEY     string
+	MINIO_BUCKET         string
+	MINIO_USE_SSL        string
 }
 
 func NewConfig() (*Config, error) {
@@ -40,5 +45,10 @@ func NewConfig() (*Config, error) {
 		FROM:                 os.Getenv("FROM"),
 		SMTP_USER:            os.Getenv("SMTP_USER"),
 		SMTP_PASS:            os.Getenv("SMTP_PASS"),
+		MINIO_ENDPOINT:       os.Getenv("MINIO_ENDPOINT"),
+		MINIO_ACCESS_KEY:     os.Getenv("MINIO_ACCESS_KEY"),
+		MINIO_SECRET_KEY:     os.Getenv("MINIO_SECRET_KEY"),
+		MINIO_BUCKET:         os.Getenv("MINIO_BUCKET"),
+		MINIO_USE_SSL:        os.Getenv("MINIO_USE_SSL"),
 	}, nil
 }

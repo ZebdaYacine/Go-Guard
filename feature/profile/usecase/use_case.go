@@ -20,7 +20,7 @@ type ProfileUseCase struct {
 type ProfileUseCaseInterface interface {
 	GetProfile(ctx context.Context, userId string) Result
 	UpdateProfile(ctx context.Context, query Query) Result
-	UpdateProfilePicture(ctx context.Context, query Query) Result
+	UpdateProfilePicture(ctx context.Context, url string, userId string) Result
 	UpdatePassword(ctx context.Context, query Query) Result
 	ActiveProfile(ctx context.Context, userId string) Result
 	// Logout(ctx context.Context, query Query) Result
@@ -88,7 +88,7 @@ func (p *ProfileUseCase) UpdateProfile(ctx context.Context, query Query) Result 
 }
 
 // UpdateProfilePicture implements [ProfileUseCaseInterface].
-func (p *ProfileUseCase) UpdateProfilePicture(ctx context.Context, query Query) Result {
+func (p *ProfileUseCase) UpdateProfilePicture(ctx context.Context, url string, userId string) Result {
 	return Result{
 		User:    User_Entity{},
 		Success: false,
